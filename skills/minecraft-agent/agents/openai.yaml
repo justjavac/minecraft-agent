@@ -1,0 +1,4 @@
+interface:
+  display_name: "Minecraft Agent"
+  short_description: "Control Minecraft bots with mc-agent."
+  default_prompt: "Use $minecraft-agent to connect to a local Minecraft server, observe chat, and control the bot through mc-agent."

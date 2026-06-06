@@ -69,6 +69,7 @@ describe("CLI protocol", () => {
     await program.parseAsync(["node", "mc-agent", "skills", "get", "core"]);
 
     expect(stdout.value).toContain("# mc-agent core");
-    expect(stdout.value).toContain("The core loop");
+    expect(stdout.value).toContain("The observe-decide-act loop");
+    expect(stdout.value).toContain("Waiting and refreshing");
   });
 });

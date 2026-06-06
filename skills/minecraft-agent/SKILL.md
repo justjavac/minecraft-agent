@@ -1,45 +1,23 @@
 ---
 name: minecraft-agent
-description: Control Minecraft bots through the mc-agent CLI built on PrismarineJS mineflayer. Use when Codex needs to connect an AI agent to a Minecraft server, manage a bot session, observe server chat or bot events, send chat replies, inspect position or inventory, or perform basic movement/camera actions in Minecraft.
+description: Minecraft automation CLI for AI agents. Use when Codex needs to connect a mineflayer bot to a Minecraft server, manage bot sessions, observe server chat or bot events, send chat replies, inspect position or inventory, or perform basic movement and camera actions. Start by loading the current workflow with `mc-agent skills get core`.
 ---
 
-# Minecraft Agent
+# minecraft-agent
 
-## Workflow
+Minecraft automation CLI for AI agents. Built on mineflayer with persistent local sessions and structured event output.
 
-Use `mc-agent` as the stable interface. Prefer JSON for automation:
-
-```bash
-mc-agent --output json session status --session default
-```
-
-If no session exists, start one for a local/offline server:
+This file is a discovery stub. Before running task commands, load the actual workflow content from the installed CLI so instructions match the current version:
 
 ```bash
-mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent skills get core
+mc-agent skills get core --full
 ```
 
-For detailed command shapes and response examples, read `references/cli.md`.
+## Why mc-agent
 
-## Operating Rules
-
-- Use `mc-agent --help` or the relevant subcommand help before assuming flags.
-- Use `--output json` for non-interactive control and parse `ok`, `data`, and `error`.
-- Check `session status` before sending chat or movement commands.
-- Read chat and bot events with `observe events`; use `observe watch` when continuous reaction is needed.
-- Send replies with `chat send --message <text>`.
-- Do not send messages beginning with `/` unless the user explicitly asked for a server command; then pass `--allow-command`.
-- On errors, follow `error.remediation` before retrying.
-- Stop sessions with `session stop` when the task is finished and the user did not ask to keep the bot online.
-
-## Chat Reaction Loop
-
-To react to Minecraft chat, keep the decision in the agent and use CLI events as input:
-
-1. Call `mc-agent --output json observe events --session default --since <lastEventId>`.
-2. Filter events with `type` of `chat`, `whisper`, or `message`.
-3. Decide the response or action.
-4. Call `chat send`, `control tap`, `look at`, or another command.
-5. Store the latest event id and continue.
-
-For streaming, run `mc-agent observe watch --session default --output json`; it emits newline-delimited JSON events.
+- Persistent Minecraft bot sessions across commands.
+- Structured chat and bot events for observe-decide-act workflows.
+- JSON output for agent parsing.
+- Local-only daemon control with session tokens.
+- Explicit safety guard for server commands beginning with `/`.

@@ -1,6 +1,7 @@
 import { Writable } from "node:stream";
 import { Command } from "commander";
 import { z } from "zod";
+import { getSkillContent } from "../core/skills.js";
 import { commandBlocked, normalizeError } from "../output/errors.js";
 import { failure, formatDefaultText, resolveOutputMode, success, writeJson, writeText } from "../output/response.js";
 import { CliHandlers } from "./handlers.js";
@@ -206,6 +207,17 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
     .requiredOption("--z <number>", "z coordinate")
     .option("--session <name>", "session name", "default")
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.lookAt(lookAtSchema.parse(opts)))());
+
+  const skills = program.command("skills").description("Print mc-agent skill content for AI agents");
+
+  skills
+    .command("get")
+    .description("Print a bundled skill by name")
+    .argument("<name>", "skill name, for example core")
+    .option("--full", "include full command reference", false)
+    .action((name: string, opts: { full: boolean }) => {
+      writeText(io.stdout, getSkillContent(name, opts.full));
+    });
 
   const daemon = new Command("daemon").description("Internal daemon commands");
   daemon

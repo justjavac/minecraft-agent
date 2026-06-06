@@ -60,6 +60,15 @@ describe("CLI protocol", () => {
   it("exposes all planned top-level command groups", () => {
     const { program } = makeProgram();
     const names = program.commands.map((command) => command.name());
-    expect(names).toEqual(expect.arrayContaining(["session", "observe", "chat", "bot", "control", "look", "daemon"]));
+    expect(names).toEqual(expect.arrayContaining(["session", "observe", "chat", "bot", "control", "look", "skills", "daemon"]));
+  });
+
+  it("prints bundled skill content directly", async () => {
+    const { program, stdout } = makeProgram();
+
+    await program.parseAsync(["node", "mc-agent", "skills", "get", "core"]);
+
+    expect(stdout.value).toContain("# mc-agent core");
+    expect(stdout.value).toContain("The core loop");
   });
 });

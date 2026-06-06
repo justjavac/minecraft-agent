@@ -164,7 +164,14 @@ The repository includes a Codex skill at:
 skills/minecraft-agent/
 ```
 
-The skill teaches Codex to use `mc-agent --output json`, observe Minecraft chat, and issue bot actions through the CLI. Validate it with:
+The installed skill is a discovery stub modeled after `agent-browser`: it tells the agent to load the current workflow from the CLI so usage stays aligned with the installed `mc-agent` version.
+
+```bash
+mc-agent skills get core
+mc-agent skills get core --full
+```
+
+Validate the repository skill with:
 
 ```bash
 python C:\Users\justj\.codex\skills\.system\skill-creator\scripts\quick_validate.py D:\Code\minecraft-cli\skills\minecraft-agent

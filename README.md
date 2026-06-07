@@ -1,5 +1,7 @@
 # minecraft-cli
 
+[![coverage](https://img.shields.io/codecov/c/github/justjavac/minecraft-cli/main?label=coverage)](https://codecov.io/gh/justjavac/minecraft-cli)
+
 Agent-friendly Minecraft CLI powered by [PrismarineJS mineflayer](https://github.com/PrismarineJS/mineflayer).
 
 `mc-agent` lets an AI agent connect a bot to a local/offline Minecraft server, observe chat events, send replies, inspect bot state, and perform basic movement/camera actions through a stable command-line interface.

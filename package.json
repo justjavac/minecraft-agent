@@ -12,6 +12,7 @@
   "scripts": {
     "build": "tsup src/cli/index.ts --format esm --clean --out-dir dist/cli",
     "dev": "tsx src/cli/index.ts",
+    "coverage": "vitest run --coverage",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.1.8",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3",

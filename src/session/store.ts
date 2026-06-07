@@ -55,6 +55,7 @@ export function sessionFilePath(session: string, stateDir = getStateDir()): stri
   const file = resolve(root, `${encodeURIComponent(validateSessionName(session))}.json`);
   const pathFromRoot = relative(root, file);
 
+  /* v8 ignore next 3 -- session names are validated and encoded before path resolution; this is a defense-in-depth guard. */
   if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) {
     throw new Error("Session path escaped the session state directory.");
   }

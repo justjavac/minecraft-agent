@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EventStore } from "../src/core/events.js";
 import { getSkillContent } from "../src/core/skills.js";
 
 describe("core skill content", () => {
@@ -11,5 +12,12 @@ describe("core skill content", () => {
 
   it("rejects unknown skill names", () => {
     expect(() => getSkillContent("missing", false)).toThrow("Unknown skill 'missing'");
+  });
+
+  it("drops the oldest event when the event store reaches its limit", () => {
+    const store = new EventStore(1);
+    store.add({ type: "first" });
+    store.add({ type: "second" });
+    expect(store.list(0, 10)).toEqual([expect.objectContaining({ type: "second" })]);
   });
 });

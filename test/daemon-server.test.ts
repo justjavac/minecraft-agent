@@ -36,6 +36,85 @@ afterEach(async () => {
 });
 
 describe("daemon server", () => {
+  it("rejects unauthorized requests, unknown routes, and handler errors", async () => {
+    const dir = await makeTempDir();
+    process.env.MC_AGENT_STATE_DIR = dir;
+    const fakeBot = new FakeBot();
+    const port = 35180 + Math.floor(Math.random() * 1000);
+
+    await runDaemon({
+      session: "errors",
+      controlPort: port,
+      token: TOKEN_A,
+      host: "localhost",
+      port: 25565,
+      username: "AgentBot",
+      auth: "offline",
+      createBotFn: () => fakeBot,
+      exitOnStop: false,
+    });
+
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/status`);
+    expect(unauthorized.status).toBe(401);
+    expect(await unauthorized.json()).toEqual({ error: "unauthorized" });
+
+    const missing = await fetch(`http://127.0.0.1:${port}/missing`, { headers: { Authorization: `Bearer ${TOKEN_A}` } });
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toEqual({ error: "not found" });
+
+    fakeBot.chat.mockImplementationOnce(() => {
+      throw new Error("chat failed");
+    });
+    const failed = await fetch(`http://127.0.0.1:${port}/chat`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_A}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "hello" }),
+    });
+    expect(failed.status).toBe(500);
+    expect(await failed.json()).toEqual({ error: "chat failed" });
+
+    fakeBot.chat.mockImplementationOnce(() => {
+      throw "string failure";
+    });
+    const stringFailure = await fetch(`http://127.0.0.1:${port}/chat`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_A}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "hello" }),
+    });
+    expect(await stringFailure.json()).toEqual({ error: "string failure" });
+
+    await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_A}` } });
+  });
+
+  it("uses default event query parameters and exits on stop by default", async () => {
+    const dir = await makeTempDir();
+    process.env.MC_AGENT_STATE_DIR = dir;
+    const fakeBot = new FakeBot();
+    const port = 36180 + Math.floor(Math.random() * 1000);
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => undefined as never) as typeof process.exit);
+
+    await runDaemon({
+      session: "exit-default",
+      controlPort: port,
+      token: TOKEN_B,
+      host: "localhost",
+      port: 25565,
+      username: "AgentBot",
+      auth: "offline",
+      createBotFn: () => fakeBot,
+    });
+    fakeBot.emit("chat", "Steve", "hello", undefined, { text: "hello" });
+
+    const events = await fetch(`http://127.0.0.1:${port}/events`, { headers: { Authorization: `Bearer ${TOKEN_B}` } });
+    expect(await events.json()).toMatchObject({ events: [expect.objectContaining({ text: "hello" })] });
+
+    const stop = await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_B}` } });
+    await stop.text();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(exit).toHaveBeenCalledWith(0);
+    exit.mockRestore();
+  });
+
   it("serves status and stored chat events over authorized local HTTP", async () => {
     const dir = await makeTempDir();
     process.env.MC_AGENT_STATE_DIR = dir;
@@ -88,16 +167,19 @@ describe("daemon server", () => {
       createBotFn: () => fakeBot,
       exitOnStop: false,
     });
+    fakeBot.emit("chat", "Alex", "old", undefined, { text: "old" });
 
-    const response = await fetch(`http://127.0.0.1:${port}/watch?since=0`, {
+    const response = await fetch(`http://127.0.0.1:${port}/watch`, {
       headers: { Authorization: `Bearer ${TOKEN_B}` },
     });
     const reader = response.body!.getReader();
-    fakeBot.emit("chat", "Alex", "ping", undefined, { text: "ping" });
 
     const { value } = await reader.read();
     const line = Buffer.from(value!).toString("utf8").trim();
-    expect(JSON.parse(line)).toMatchObject({ type: "chat", sender: "Alex", text: "ping" });
+    expect(JSON.parse(line)).toMatchObject({ type: "chat", sender: "Alex", text: "old" });
+    fakeBot.emit("chat", "Alex", "ping", undefined, { text: "ping" });
+    const next = await reader.read();
+    expect(JSON.parse(Buffer.from(next.value!).toString("utf8").trim())).toMatchObject({ text: "ping" });
     await reader.cancel();
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_B}` } });
   });
@@ -126,6 +208,12 @@ describe("daemon server", () => {
       body: JSON.stringify({ message: "hello" }),
     });
     expect(fakeBot.chat).toHaveBeenCalledWith("hello");
+
+    await fetch(`http://127.0.0.1:${port}/chat`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}` },
+    });
+    expect(fakeBot.chat).toHaveBeenCalledWith("");
 
     const position = await fetch(`http://127.0.0.1:${port}/bot/position`, { headers: { Authorization: `Bearer ${TOKEN_C}` } });
     expect(await position.json()).toMatchObject({ position: { x: 1, y: 2, z: 3 }, dimension: "overworld" });

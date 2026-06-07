@@ -28,6 +28,8 @@ describe("output errors", () => {
     const schema = z.object({ value: z.string().min(3) });
     const zodError = schema.safeParse({ value: "x" }).error!;
     expect(normalizeError(zodError)).toMatchObject({ code: "BAD_INPUT", message: expect.stringContaining("value") });
+    const rootZodError = z.string().min(3).safeParse("x").error!;
+    expect(normalizeError(rootZodError)).toMatchObject({ code: "BAD_INPUT", message: expect.stringContaining("value") });
 
     expect(normalizeError(new Error("boom"))).toMatchObject({ code: "UNKNOWN_ERROR", message: "boom" });
     expect(normalizeError("wat")).toMatchObject({ code: "UNKNOWN_ERROR", message: "Unknown error." });

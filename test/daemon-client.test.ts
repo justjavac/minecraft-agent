@@ -77,4 +77,16 @@ describe("daemon client", () => {
       exitCode: 1,
     });
   });
+
+  it("handles empty success bodies and fallback daemon error messages", async () => {
+    const saved = record({ token: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response("", { status: 200 })));
+    await expect(daemonRequest(saved, "/empty")).resolves.toEqual({});
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response("", { status: 503 })));
+    await expect(daemonRequest(saved, "/down")).rejects.toMatchObject({
+      code: "DAEMON_ERROR",
+      message: "Daemon returned HTTP 503.",
+    });
+  });
 });

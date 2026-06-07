@@ -1,9 +1,11 @@
-import { chmod, mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createSessionToken,
+  getStateDir,
+  isProcessAlive,
   listSessions,
   readSession,
   removeSession,
@@ -44,12 +46,14 @@ describe("session store", () => {
   it("writes, reads, lists, and removes session records without exposing tokens publicly", async () => {
     const dir = await makeTempDir();
     const saved = record();
+    const second = record({ session: "another" });
 
     await writeSession(saved, dir);
+    await writeSession(second, dir);
 
     const stored = await readSession("default", dir);
     expect(stored?.token).toBe(saved.token);
-    expect(await listSessions(dir)).toHaveLength(1);
+    expect((await listSessions(dir)).map((item) => item.session)).toEqual(["another", "default"]);
 
     const publicRecord = toPublicSession(stored!);
     expect(publicRecord).not.toHaveProperty("token");
@@ -100,5 +104,50 @@ describe("session store", () => {
 
     await expect(writeSession(record({ token: "" }), dir)).rejects.toThrow(/token/i);
     await expect(writeSession(record({ token: "x" }), dir)).rejects.toThrow(/token/i);
+  });
+
+  it("covers state defaults, token validation, and process liveness branches", () => {
+    const previous = process.env.MC_AGENT_STATE_DIR;
+    delete process.env.MC_AGENT_STATE_DIR;
+    expect(getStateDir()).toContain(".minecraft-cli");
+    process.env.MC_AGENT_STATE_DIR = "custom-state";
+    expect(getStateDir()).toBe("custom-state");
+    if (previous === undefined) {
+      delete process.env.MC_AGENT_STATE_DIR;
+    } else {
+      process.env.MC_AGENT_STATE_DIR = previous;
+    }
+
+    expect(() => createSessionToken(31)).toThrow(/32 random bytes/);
+    expect(isProcessAlive(0)).toBe(false);
+
+    const kill = vi.spyOn(process, "kill").mockImplementation((() => {
+      const error = new Error("permission") as NodeJS.ErrnoException;
+      error.code = "EPERM";
+      throw error;
+    }) as typeof process.kill);
+    expect(isProcessAlive(123)).toBe(true);
+    kill.mockImplementation((() => {
+      const error = new Error("missing") as NodeJS.ErrnoException;
+      error.code = "ESRCH";
+      throw error;
+    }) as typeof process.kill);
+    expect(isProcessAlive(123)).toBe(false);
+    kill.mockRestore();
+  });
+
+  it("surfaces corrupt session files and state directory read errors", async () => {
+    const dir = await makeTempDir();
+    const file = sessionFilePath("bad", dir);
+    await writeSession(record({ session: "bad" }), dir);
+    await writeFile(file, "{not json");
+
+    await expect(readSession("bad", dir)).rejects.toThrow();
+    await expect(listSessions(file)).rejects.toThrow();
+  });
+
+  it("returns an empty list for a missing state directory", async () => {
+    const dir = join(await makeTempDir(), "missing");
+    await expect(listSessions(dir)).resolves.toEqual([]);
   });
 });

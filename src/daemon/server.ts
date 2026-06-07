@@ -19,6 +19,7 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
 async function readJson(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
+    /* v8 ignore next -- Node HTTP request chunks are Buffers in supported runtimes; keep the fallback for defensive compatibility. */
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   if (chunks.length === 0) {
@@ -43,6 +44,7 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
         return;
       }
 
+      /* v8 ignore next -- Incoming HTTP requests always provide a URL; fallback is defensive. */
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
 
       if (request.method === "GET" && url.pathname === "/status") {
@@ -53,12 +55,11 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
       if (request.method === "POST" && url.pathname === "/stop") {
         sendJson(response, 200, { stopped: true });
         controller.stop();
-        server.close(() => {
-          void removeSession(options.session).finally(() => {
-            if (options.exitOnStop ?? true) {
-              process.exit(0);
-            }
-          });
+        void removeSession(options.session).finally(() => {
+          server.close();
+          if (options.exitOnStop ?? true) {
+            process.exit(0);
+          }
         });
         return;
       }

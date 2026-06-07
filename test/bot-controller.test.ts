@@ -4,7 +4,7 @@ import { EventStore } from "../src/core/events.js";
 import { BotController } from "../src/daemon/bot.js";
 
 class FakeBot extends EventEmitter {
-  username = "AgentBot";
+  username: string | undefined = "AgentBot";
   health = 20;
   food = 20;
   chat = vi.fn();
@@ -59,5 +59,29 @@ describe("BotController", () => {
     const { subject: started, bot } = controller();
     started.stop();
     expect(bot.quit).toHaveBeenCalledWith("mc-agent session stop");
+  });
+
+  it("handles missing optional bot fields and non-Error event payloads", () => {
+    const events = new EventStore();
+    const bot = new FakeBot();
+    bot.username = undefined;
+    const subject = new BotController(
+      { host: "localhost", port: 25565, username: "FallbackBot", auth: "offline" },
+      events,
+      () => bot,
+    );
+    subject.start();
+    bot.emit("error", "plain-error");
+    bot.emit("message", undefined, "system", undefined);
+
+    expect(subject.status()).toMatchObject({ username: "FallbackBot", lastError: "plain-error" });
+    expect(subject.position()).toEqual({ position: undefined, dimension: undefined });
+    expect(subject.inventory()).toEqual({ items: [] });
+    expect(events.list(0, 10)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "message", sender: undefined, text: "undefined" }),
+        expect.objectContaining({ type: "error", text: "plain-error" }),
+      ]),
+    );
   });
 });

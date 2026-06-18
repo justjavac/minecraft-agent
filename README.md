@@ -166,12 +166,14 @@ The repository includes a Codex skill at:
 skills/minecraft-agent/
 ```
 
-The installed skill is a discovery stub modeled after `agent-browser`: it tells the agent to load the current workflow from the CLI so usage stays aligned with the installed `mc-agent` version.
+The installed skill is a compact entry guide for Minecraft chat reactions and bot control. It tells the agent to load the current runtime workflow from the CLI so usage stays aligned with the installed `mc-agent` version.
 
 ```bash
 mc-agent skills get core
 mc-agent skills get core --full
 ```
+
+The repository fallback reference is `skills/minecraft-agent/references/mc-agent-cli.md`.
 
 Validate the repository skill with:
 

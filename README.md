@@ -17,7 +17,7 @@ The npm package is the runtime dependency. The skill is the main agent-facing in
 After the skill is published on [skills.sh](https://www.skills.sh), install it with:
 
 ```bash
-npx skill add minecraft
+npx skills add justjavac/minecraft-agent
 ```
 
 ## What The Skill Does

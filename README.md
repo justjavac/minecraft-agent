@@ -224,25 +224,25 @@ Exit codes:
 
 ## Codex Skill
 
-The repository includes a Codex skill at:
+The repository includes a Codex skill named `minecraft` at:
 
 ```text
-skills/minecraft-agent/
+skills/minecraft/
 ```
 
-The installed skill is a compact entry guide for Minecraft chat reactions and bot control. It tells the agent to load the current runtime workflow from `mcagent` so usage stays aligned with the installed package version.
+The installed skill is a compact entry guide for Minecraft chat reactions and bot control. It is invoked as `$minecraft` and tells the agent to load the current runtime workflow from `mcagent` so usage stays aligned with the installed package version.
 
 ```bash
 mcagent skills get core
 mcagent skills get core --full
 ```
 
-The repository fallback reference is `skills/minecraft-agent/references/mcagent-cli.md`.
+The repository fallback reference is `skills/minecraft/references/mcagent-cli.md`.
 
 Validate the repository skill with:
 
 ```bash
-python C:\Users\justj\.codex\skills\.system\skill-creator\scripts\quick_validate.py .\skills\minecraft-agent
+python C:\Users\justj\.codex\skills\.system\skill-creator\scripts\quick_validate.py .\skills\minecraft
 ```
 
 ## Manual Acceptance

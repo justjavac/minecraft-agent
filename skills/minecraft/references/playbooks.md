@@ -2,6 +2,8 @@
 
 Use these examples only when the task needs a concrete command sequence. Prefer `mcagent skills get core` for the current command reference.
 
+Naming: invoke this skill as `$minecraft`; install the npm package as `minecraft-agent`; run the CLI as `mcagent`.
+
 ## Install Or Verify The CLI
 
 Check for the CLI:

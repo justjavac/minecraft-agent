@@ -7,8 +7,8 @@ export function getSkillContent(name: string, full: boolean): string {
 }
 
 const CORE_SKILL = `---
-name: minecraft-agent-core
-description: Runtime Minecraft Agent guide for AI agents using mcagent to control a Minecraft bot. Read before Minecraft agent commands; covers local session startup, chat/whisper/message reaction loops, event id tracking, safe chat replies, movement, pathfinding, player/entity/block observation, inventory, item use, combat/entity interaction, block actions, farming, building, mining, containers, crafting, JSON output, and daemon troubleshooting.
+name: minecraft-core
+description: Runtime Minecraft guide for AI agents using mcagent to control a Minecraft bot. Read before Minecraft agent commands; covers local session startup, chat/whisper/message reaction loops, mention-triggered actions, event id tracking, safe chat replies, movement, pathfinding, player/entity/block observation, inventory, item use, combat/entity interaction, block actions, farming, building, mining, containers, crafting, JSON output, and daemon troubleshooting.
 ---
 
 # mcagent core

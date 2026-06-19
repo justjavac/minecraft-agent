@@ -28,7 +28,14 @@ async function getFreePort(): Promise<number> {
 async function waitForDaemon(session: string, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const record = await readSession(session);
+    let record;
+    try {
+      record = await readSession(session);
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) {
+        throw error;
+      }
+    }
     if (record) {
       try {
         await daemonRequest(record, "/status");

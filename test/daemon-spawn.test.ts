@@ -117,6 +117,20 @@ describe("daemon spawn", () => {
     expect(mocks.daemonRequest).toHaveBeenCalledTimes(2);
   });
 
+  it("retries when the session file is temporarily incomplete", async () => {
+    vi.useFakeTimers();
+    const { spawnSessionDaemon, mocks } = await loadSpawnWithNetMock({ port: 34568 });
+    mocks.readSession.mockImplementationOnce(() => {
+      throw new SyntaxError("Unexpected end of JSON input");
+    });
+
+    const spawned = spawnSessionDaemon(input, "entry.js");
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expect(spawned).resolves.toEqual({ controlPort: 34568 });
+    expect(mocks.daemonRequest).toHaveBeenCalledTimes(1);
+  });
+
   it("fails when the daemon never becomes ready", async () => {
     vi.useFakeTimers();
     const { spawnSessionDaemon, mocks } = await loadSpawnWithNetMock({ port: 45678 });

@@ -45,7 +45,7 @@ class FakeBot extends EventEmitter {
 const tempDirs: string[] = [];
 
 async function makeTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), "mcagent-daemon-"));
+  const dir = await mkdtemp(join(tmpdir(), "mc-agent-daemon-"));
   tempDirs.push(dir);
   return dir;
 }

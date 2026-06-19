@@ -18,7 +18,7 @@ import {
 const tempDirs: string[] = [];
 
 async function makeTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), "mcagent-session-"));
+  const dir = await mkdtemp(join(tmpdir(), "mc-agent-session-"));
   tempDirs.push(dir);
   return dir;
 }

@@ -181,7 +181,7 @@ describe("BotController", () => {
 
     const { subject: started, bot } = controller();
     started.stop();
-    expect(bot.quit).toHaveBeenCalledWith("mcagent session stop");
+    expect(bot.quit).toHaveBeenCalledWith("mc-agent session stop");
   });
 
   it("handles missing optional bot fields and non-Error event payloads", () => {

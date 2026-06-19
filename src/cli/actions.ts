@@ -16,7 +16,7 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
           throw new CliError(
             "SESSION_ALREADY_RUNNING",
             `Session '${input.session}' is already running.`,
-            "Use 'mcagent session status' or stop it before starting a new session.",
+            "Use 'mc-agent session status' or stop it before starting a new session.",
             1,
           );
         }
@@ -750,7 +750,7 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
     async daemonRun(input) {
       const token = process.env.MC_AGENT_CONTROL_TOKEN;
       if (!token) {
-        throw new CliError("BAD_INPUT", "Missing daemon token.", "Start daemons through 'mcagent session start'.", 3);
+        throw new CliError("BAD_INPUT", "Missing daemon token.", "Start daemons through 'mc-agent session start'.", 3);
       }
       await runDaemon({ ...input, token });
       return { session: input.session, running: true };

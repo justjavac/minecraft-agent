@@ -1275,7 +1275,7 @@ export class BotController {
   }
 
   stop(): void {
-    this.bot?.quit("mcagent session stop");
+    this.bot?.quit("mc-agent session stop");
   }
 
   private requireBot(): MineflayerBot {

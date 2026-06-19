@@ -2,13 +2,13 @@
 
 [![coverage](https://img.shields.io/codecov/c/github/justjavac/minecraft-agent/main?label=coverage)](https://codecov.io/gh/justjavac/minecraft-agent)
 
-`minecraft` is an AI-agent skill for controlling a Minecraft bot through the `mcagent` CLI. It helps agents such as Codex, Claude Code, and Gemini CLI connect to a Minecraft server, observe chat and world events, react when the bot is mentioned, and safely perform in-game tasks such as following players, farming, building, mining, crafting, and using containers.
+`minecraft` is an AI-agent skill for controlling a Minecraft bot through the `mc-agent` CLI. It helps agents such as Codex, Claude Code, and Gemini CLI connect to a Minecraft server, observe chat and world events, react when the bot is mentioned, and safely perform in-game tasks such as following players, farming, building, mining, crafting, and using containers.
 
 Naming:
 
 - Skill name: `minecraft`
 - npm package: `minecraft-agent`
-- CLI binary: `mcagent`
+- CLI binary: `mc-agent`
 
 The npm package is the runtime dependency. The skill is the main agent-facing interface.
 
@@ -32,9 +32,9 @@ The skill is designed to be installed independently. It does not assume the user
 
 When an agent uses `$minecraft`, the skill tells it to:
 
-1. Verify that `mcagent` is available.
-2. Install the runtime package with `npm install -g minecraft-agent` if `mcagent` is missing and global installs are acceptable.
-3. Load the installed runtime guide with `mcagent skills get core`.
+1. Verify that `mc-agent` is available.
+2. Install the runtime package with `npm install -g minecraft-agent` if `mc-agent` is missing and global installs are acceptable.
+3. Load the installed runtime guide with `mc-agent skills get core`.
 4. Check or start a bot session.
 5. Observe chat, whispers, world events, bot state, inventory, players, entities, and blocks.
 6. Take one safe Minecraft action at a time, then inspect the result before continuing.
@@ -42,8 +42,8 @@ When an agent uses `$minecraft`, the skill tells it to:
 For exact command flags, the agent should use:
 
 ```bash
-mcagent skills get core
-mcagent skills get core --full
+mc-agent skills get core
+mc-agent skills get core --full
 ```
 
 ## Use In Codex
@@ -85,10 +85,10 @@ Then ask the agent to use the installed `minecraft` skill.
 If the runtime does not have native skill support, point it at the installed `SKILL.md` or paste this instruction:
 
 ```text
-Use the minecraft skill workflow: ensure mcagent is installed, run `mcagent skills get core`, use JSON output, inspect current session/state before acting, react to Minecraft chat only when the bot is directly mentioned or the user asked you to monitor chat, and verify state after every physical action.
+Use the minecraft skill workflow: ensure mc-agent is installed, run `mc-agent skills get core`, use JSON output, inspect current session/state before acting, react to Minecraft chat only when the bot is directly mentioned or the user asked you to monitor chat, and verify state after every physical action.
 ```
 
-The important part is that the agent follows the skill workflow and loads `mcagent skills get core` from the installed CLI instead of guessing command flags.
+The important part is that the agent follows the skill workflow and loads `mc-agent skills get core` from the installed CLI instead of guessing command flags.
 
 ## First Run
 
@@ -102,26 +102,26 @@ Manual runtime install:
 
 ```bash
 npm install -g minecraft-agent
-mcagent --help
+mc-agent --help
 ```
 
 Start a local/offline bot session:
 
 ```bash
-mcagent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
 ```
 
 Check status and read recent events:
 
 ```bash
-mcagent --output json session status --session default
-mcagent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json session status --session default
+mc-agent --output json observe events --session default --since 0 --limit 50
 ```
 
 Stop the bot:
 
 ```bash
-mcagent --output json session stop --session default
+mc-agent --output json session stop --session default
 ```
 
 ## Wait For Player Mentions
@@ -194,7 +194,7 @@ The skill deliberately pushes agents toward small, verified actions:
 
 ## CLI Development
 
-This repository also contains the `minecraft-agent` npm package that provides `mcagent`.
+This repository also contains the `minecraft-agent` npm package that provides `mc-agent`.
 
 Install and verify locally:
 

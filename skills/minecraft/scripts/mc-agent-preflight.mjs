@@ -6,8 +6,8 @@ const options = parseArgs(process.argv.slice(2));
 if (options.help) {
   print({
     ok: true,
-    usage: "node scripts/mcagent-preflight.mjs [--session default] [--bin mcagent]",
-    description: "Check whether mcagent is available and whether the target session is ready before taking Minecraft actions.",
+    usage: "node scripts/mc-agent-preflight.mjs [--session default] [--bin mc-agent]",
+    description: "Check whether mc-agent is available and whether the target session is ready before taking Minecraft actions.",
   });
   process.exit(0);
 }
@@ -19,10 +19,10 @@ if (status.spawnError) {
     ok: false,
     available: false,
     session: options.session,
-    code: "MCAGENT_UNAVAILABLE",
+    code: "MC_AGENT_UNAVAILABLE",
     message: status.spawnError,
     install: "npm install -g minecraft-agent",
-    next: "Install minecraft-agent, verify 'mcagent --help', then rerun preflight. If global installs are not appropriate, provide the CLI path with --bin.",
+    next: "Install minecraft-agent, verify 'mc-agent --help', then rerun preflight. If global installs are not appropriate, provide the CLI path with --bin.",
   });
   process.exit(2);
 }
@@ -52,8 +52,8 @@ print({
   ok: false,
   available: true,
   session: options.session,
-  code: error?.code ?? "MCAGENT_STATUS_FAILED",
-  message: error?.message ?? status.stderr.trim() ?? status.stdout.trim() ?? "mcagent session status failed.",
+  code: error?.code ?? "MC_AGENT_STATUS_FAILED",
+  message: error?.message ?? status.stderr.trim() ?? status.stdout.trim() ?? "mc-agent session status failed.",
   remediation: error?.remediation,
   next:
     error?.code === "SESSION_NOT_FOUND"
@@ -63,7 +63,7 @@ print({
 process.exit(status.exitCode === 0 ? 1 : status.exitCode);
 
 function parseArgs(args) {
-  const parsed = { session: "default", bin: "mcagent", help: false };
+  const parsed = { session: "default", bin: "mc-agent", help: false };
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--help" || arg === "-h") {

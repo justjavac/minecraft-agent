@@ -26,7 +26,7 @@ describe("CLI protocol", () => {
     const { program, handlers, stdout } = makeProgram();
     vi.spyOn(handlers, "startSession").mockResolvedValue({ session: "default" });
 
-    await program.parseAsync(["node", "mcagent", "session", "start"]);
+    await program.parseAsync(["node", "mc-agent", "session", "start"]);
 
     expect(handlers.startSession).toHaveBeenCalledWith({
       session: "default",
@@ -47,7 +47,7 @@ describe("CLI protocol", () => {
     program.exitOverride();
     vi.spyOn(handlers, "startSession").mockResolvedValue({});
 
-    await program.parseAsync(["node", "mcagent", "session", "start"]);
+    await program.parseAsync(["node", "mc-agent", "session", "start"]);
 
     expect(stdout.value).toBe("Started session default\n");
   });
@@ -55,7 +55,7 @@ describe("CLI protocol", () => {
   it("blocks slash commands unless explicitly allowed", async () => {
     const { program, stdout } = makeProgram();
 
-    await expect(program.parseAsync(["node", "mcagent", "chat", "send", "--message", "/op me"])).rejects.toMatchObject({
+    await expect(program.parseAsync(["node", "mc-agent", "chat", "send", "--message", "/op me"])).rejects.toMatchObject({
       code: "COMMAND_BLOCKED",
       exitCode: 3,
     });
@@ -96,9 +96,9 @@ describe("CLI protocol", () => {
   it("prints bundled skill content directly", async () => {
     const { program, stdout } = makeProgram();
 
-    await program.parseAsync(["node", "mcagent", "skills", "get", "core"]);
+    await program.parseAsync(["node", "mc-agent", "skills", "get", "core"]);
 
-    expect(stdout.value).toContain("# mcagent core");
+    expect(stdout.value).toContain("# mc-agent core");
     expect(stdout.value).toContain("The observe-decide-act loop");
     expect(stdout.value).toContain("Waiting and refreshing");
   });
@@ -129,29 +129,29 @@ describe("CLI protocol", () => {
     vi.spyOn(handlers, "worldActivate").mockResolvedValue({});
     vi.spyOn(handlers, "daemonRun").mockResolvedValue({});
 
-    await program.parseAsync(["node", "mcagent", "session", "status", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "session", "list"]);
-    await program.parseAsync(["node", "mcagent", "session", "stop", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "observe", "events", "--session", "s", "--since", "2", "--limit", "3"]);
-    await program.parseAsync(["node", "mcagent", "observe", "watch", "--session", "s", "--since", "4"]);
-    await program.parseAsync(["node", "mcagent", "chat", "send", "--session", "s", "--message", "/say hi", "--allow-command"]);
-    await program.parseAsync(["node", "mcagent", "bot", "position", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "bot", "inventory", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "bot", "players", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "bot", "entities", "--session", "s", "--radius", "16", "--limit", "4"]);
-    await program.parseAsync(["node", "mcagent", "control", "tap", "--session", "s", "--state", "jump", "--duration-ms", "25"]);
-    await program.parseAsync(["node", "mcagent", "look", "at", "--session", "s", "--x", "1", "--y", "2", "--z", "3"]);
-    await program.parseAsync(["node", "mcagent", "world", "block", "--session", "s", "--x", "4", "--y", "5", "--z", "6"]);
-    await program.parseAsync(["node", "mcagent", "world", "find-blocks", "--session", "s", "--name", "farmland", "--radius", "12", "--count", "3"]);
-    await program.parseAsync(["node", "mcagent", "navigate", "goto", "--session", "s", "--x", "7", "--y", "8", "--z", "9", "--range", "2"]);
-    await program.parseAsync(["node", "mcagent", "navigate", "follow", "--session", "s", "--player", "Steve", "--range", "3"]);
-    await program.parseAsync(["node", "mcagent", "navigate", "stop", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "navigate", "status", "--session", "s"]);
-    await program.parseAsync(["node", "mcagent", "inventory", "equip", "--session", "s", "--item", "dirt", "--destination", "hand"]);
-    await program.parseAsync(["node", "mcagent", "world", "dig", "--session", "s", "--x", "10", "--y", "11", "--z", "12"]);
+    await program.parseAsync(["node", "mc-agent", "session", "status", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "session", "list"]);
+    await program.parseAsync(["node", "mc-agent", "session", "stop", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "observe", "events", "--session", "s", "--since", "2", "--limit", "3"]);
+    await program.parseAsync(["node", "mc-agent", "observe", "watch", "--session", "s", "--since", "4"]);
+    await program.parseAsync(["node", "mc-agent", "chat", "send", "--session", "s", "--message", "/say hi", "--allow-command"]);
+    await program.parseAsync(["node", "mc-agent", "bot", "position", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "bot", "inventory", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "bot", "players", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "bot", "entities", "--session", "s", "--radius", "16", "--limit", "4"]);
+    await program.parseAsync(["node", "mc-agent", "control", "tap", "--session", "s", "--state", "jump", "--duration-ms", "25"]);
+    await program.parseAsync(["node", "mc-agent", "look", "at", "--session", "s", "--x", "1", "--y", "2", "--z", "3"]);
+    await program.parseAsync(["node", "mc-agent", "world", "block", "--session", "s", "--x", "4", "--y", "5", "--z", "6"]);
+    await program.parseAsync(["node", "mc-agent", "world", "find-blocks", "--session", "s", "--name", "farmland", "--radius", "12", "--count", "3"]);
+    await program.parseAsync(["node", "mc-agent", "navigate", "goto", "--session", "s", "--x", "7", "--y", "8", "--z", "9", "--range", "2"]);
+    await program.parseAsync(["node", "mc-agent", "navigate", "follow", "--session", "s", "--player", "Steve", "--range", "3"]);
+    await program.parseAsync(["node", "mc-agent", "navigate", "stop", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "navigate", "status", "--session", "s"]);
+    await program.parseAsync(["node", "mc-agent", "inventory", "equip", "--session", "s", "--item", "dirt", "--destination", "hand"]);
+    await program.parseAsync(["node", "mc-agent", "world", "dig", "--session", "s", "--x", "10", "--y", "11", "--z", "12"]);
     await program.parseAsync([
       "node",
-      "mcagent",
+      "mc-agent",
       "world",
       "place",
       "--session",
@@ -167,8 +167,8 @@ describe("CLI protocol", () => {
       "--item",
       "dirt",
     ]);
-    await program.parseAsync(["node", "mcagent", "world", "activate", "--session", "s", "--x", "16", "--y", "17", "--z", "18"]);
-    await program.parseAsync(["node", "mcagent", "daemon", "run", "--control-port", "4567"]);
+    await program.parseAsync(["node", "mc-agent", "world", "activate", "--session", "s", "--x", "16", "--y", "17", "--z", "18"]);
+    await program.parseAsync(["node", "mc-agent", "daemon", "run", "--control-port", "4567"]);
 
     expect(handlers.sessionStatus).toHaveBeenCalledWith({ session: "s" });
     expect(handlers.listSessions).toHaveBeenCalledWith();
@@ -212,8 +212,8 @@ describe("CLI protocol", () => {
     vi.spyOn(handlers, "startSession").mockResolvedValue({ session: "named" });
     vi.spyOn(handlers, "sessionStatus").mockRejectedValue(new Error("plain failure"));
 
-    await program.parseAsync(["node", "mcagent", "session", "start"]);
-    await expect(program.parseAsync(["node", "mcagent", "session", "status"])).rejects.toMatchObject({
+    await program.parseAsync(["node", "mc-agent", "session", "start"]);
+    await expect(program.parseAsync(["node", "mc-agent", "session", "status"])).rejects.toMatchObject({
       code: "UNKNOWN_ERROR",
     });
 

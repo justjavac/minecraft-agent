@@ -310,7 +310,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
   const program = new Command();
 
   program
-    .name("mcagent")
+    .name("mc-agent")
     .description("Agent-ready Minecraft bot CLI powered by mineflayer.")
     .version("1.0.0")
     .option("--output <mode>", "output mode: json or text")
@@ -1162,7 +1162,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
     .option("--session <name>", "session name", "default")
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.combatAttackNearest(combatAttackNearestSchema.parse(opts)))());
 
-  const skills = program.command("skills").description("Print mcagent skill content for AI agents");
+  const skills = program.command("skills").description("Print mc-agent skill content for AI agents");
 
   skills
     .command("get")

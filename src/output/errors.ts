@@ -36,7 +36,7 @@ export function sessionNotFound(session: string): CliError {
   return new CliError(
     "SESSION_NOT_FOUND",
     `Session '${session}' is not running.`,
-    "Start it with 'mcagent session start --session <name>'.",
+    "Start it with 'mc-agent session start --session <name>'.",
     4,
   );
 }

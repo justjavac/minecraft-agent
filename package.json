@@ -27,7 +27,7 @@
   "type": "module",
   "main": "./dist/cli/index.js",
   "bin": {
-    "mcagent": "./dist/cli/index.js"
+    "mc-agent": "./dist/cli/index.js"
   },
   "files": [
     "dist/cli",

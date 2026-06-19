@@ -214,8 +214,7 @@ npm run dev -- --help
 Validate the bundled skill:
 
 ```bash
-python C:\Users\justj\.codex\skills\.system\skill-creator\scripts\quick_validate.py .\skills\minecraft
+npx skill validate ./skills/minecraft
 ```
 
 The detailed capability requirements live in [docs/capability-requirements.md](docs/capability-requirements.md).
-

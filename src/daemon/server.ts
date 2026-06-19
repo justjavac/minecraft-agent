@@ -12,8 +12,9 @@ export interface DaemonOptions extends BotOptions {
 }
 
 function sendJson(response: ServerResponse, statusCode: number, body: unknown): void {
+  const payload = JSON.stringify(body);
   response.writeHead(statusCode, { "Content-Type": "application/json" });
-  response.end(JSON.stringify(body));
+  response.end(payload);
 }
 
 async function readJson(request: IncomingMessage): Promise<unknown> {

@@ -153,18 +153,28 @@ describe("daemon server", () => {
       exitOnStop: false,
     });
 
+    Object.assign(fakeBot, { experience: { level: 1n }, time: { age: 2n } });
     fakeBot.emit("login");
-    fakeBot.emit("chat", "Steve", "hello", undefined, { text: "hello" });
+    fakeBot.emit("chat", "Steve", "hello", undefined, { text: "hello", big: 3n });
 
     const status = await fetch(`http://127.0.0.1:${port}/status`, { headers: { Authorization: `Bearer ${TOKEN_A}` } });
     expect(status.ok).toBe(true);
-    expect(await status.json()).toMatchObject({ connected: true, username: "AgentBot", lastEventId: 2 });
+    expect(await status.json()).toMatchObject({
+      connected: true,
+      username: "AgentBot",
+      experience: { level: "1" },
+      time: { age: "2" },
+      lastEventId: 2,
+    });
 
     const events = await fetch(`http://127.0.0.1:${port}/events?since=0&limit=10`, {
       headers: { Authorization: `Bearer ${TOKEN_A}` },
     });
     expect(await events.json()).toMatchObject({
-      events: [expect.objectContaining({ type: "login" }), expect.objectContaining({ type: "chat", sender: "Steve", text: "hello" })],
+      events: [
+        expect.objectContaining({ type: "login" }),
+        expect.objectContaining({ type: "chat", sender: "Steve", text: "hello", raw: { jsonMsg: { text: "hello", big: "3" } } }),
+      ],
     });
 
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_A}` } });

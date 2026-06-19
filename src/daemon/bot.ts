@@ -514,14 +514,14 @@ export class BotController {
       this.events.add({ type: "teamUpdated", text: "Team updated.", raw: safePlain(team) });
     });
     this.bot.on("chat", (sender, text, translate, jsonMsg) => {
-      this.events.add({ type: "chat", sender: String(sender), text: String(text), raw: { translate, jsonMsg } });
+      this.events.add({ type: "chat", sender: String(sender), text: String(text), raw: { translate: safePlain(translate), jsonMsg: safePlain(jsonMsg) } });
     });
     this.bot.on("whisper", (sender, text, translate, jsonMsg) => {
-      this.events.add({ type: "whisper", sender: String(sender), text: String(text), raw: { translate, jsonMsg } });
+      this.events.add({ type: "whisper", sender: String(sender), text: String(text), raw: { translate: safePlain(translate), jsonMsg: safePlain(jsonMsg) } });
     });
     this.bot.on("message", (jsonMsg, position, sender) => {
       const text = typeof jsonMsg?.toString === "function" ? jsonMsg.toString() : String(jsonMsg);
-      this.events.add({ type: "message", sender: sender ? String(sender) : undefined, text, raw: { jsonMsg, position } });
+      this.events.add({ type: "message", sender: sender ? String(sender) : undefined, text, raw: { jsonMsg: safePlain(jsonMsg), position: safePlain(position) } });
     });
   }
 
@@ -537,15 +537,15 @@ export class BotController {
       food: this.bot?.food,
       foodSaturation: this.bot?.foodSaturation,
       oxygenLevel: this.bot?.oxygenLevel,
-      experience: this.bot?.experience,
-      time: this.bot?.time,
+      experience: safePlain(this.bot?.experience),
+      time: safePlain(this.bot?.time),
       isRaining: this.bot?.isRaining,
       thunderState: this.bot?.thunderState,
       quickBarSlot: this.bot?.quickBarSlot,
       isSleeping: this.bot?.isSleeping,
       usingHeldItem: this.bot?.usingHeldItem,
       heldItem: this.bot?.heldItem ? { name: this.bot.heldItem.name, displayName: this.bot.heldItem.displayName } : undefined,
-      controlState: this.bot?.controlState,
+      controlState: safePlain(this.bot?.controlState),
       lastError: this.lastError,
       lastEventId: this.events.getLastEventId(),
     };

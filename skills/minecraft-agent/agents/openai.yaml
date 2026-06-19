@@ -1,4 +1,4 @@
 interface:
   display_name: "Minecraft Agent"
   short_description: "Control a Minecraft bot with mcagent."
-  default_prompt: "Use $minecraft-agent to preflight mcagent, connect or reuse a Minecraft bot, monitor chat and world events, and react with safe chat replies, movement, building, farming, inventory, or entity actions."
+  default_prompt: "Use $minecraft-agent to install or verify mcagent, connect or reuse a Minecraft bot, monitor chat and world events, and react with safe chat replies, movement, building, farming, inventory, or entity actions."

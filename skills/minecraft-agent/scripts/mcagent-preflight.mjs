@@ -21,7 +21,8 @@ if (status.spawnError) {
     session: options.session,
     code: "MCAGENT_UNAVAILABLE",
     message: status.spawnError,
-    next: "Install minecraft-agent or provide the CLI path with --bin.",
+    install: "npm install -g minecraft-agent",
+    next: "Install minecraft-agent, verify 'mcagent --help', then rerun preflight. If global installs are not appropriate, provide the CLI path with --bin.",
   });
   process.exit(2);
 }

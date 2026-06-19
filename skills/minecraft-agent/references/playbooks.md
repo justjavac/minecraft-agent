@@ -2,12 +2,35 @@
 
 Use these examples only when the task needs a concrete command sequence. Prefer `mcagent skills get core` for the current command reference.
 
+## Install Or Verify The CLI
+
+Check for the CLI:
+
+```bash
+mcagent --help
+```
+
+If the command is missing, install the npm package:
+
+```bash
+npm install -g minecraft-agent
+```
+
+Then verify again:
+
+```bash
+mcagent --help
+mcagent skills get core
+```
+
+If the environment cannot install global npm packages, ask the user where to install `minecraft-agent` or use the environment's temporary npm execution mechanism. Do not start Minecraft actions until the `mcagent` command is available.
+
 ## Preflight
 
 Before physical actions, verify the CLI and session:
 
 ```bash
-node skills/minecraft-agent/scripts/mcagent-preflight.mjs --session default
+node <installed-skill-folder>/scripts/mcagent-preflight.mjs --session default
 ```
 
 If the script reports `SESSION_NOT_FOUND`, start the session shown in `next`. If it reports a daemon or connection error, stop and surface the remediation instead of continuing.

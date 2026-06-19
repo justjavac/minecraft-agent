@@ -1,6 +1,6 @@
 {
   "name": "minecraft-agent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent-ready Minecraft bot CLI powered by mineflayer.",
   "keywords": [
     "minecraft",

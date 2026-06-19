@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { join } from "node:path";
 
 async function loadSpawnWithMocks() {
   vi.resetModules();
@@ -84,7 +85,7 @@ describe("daemon spawn", () => {
     ).resolves.toEqual(expect.objectContaining({ controlPort: expect.any(Number) }));
 
     expect(mocks.mkdir).toHaveBeenCalledWith("C:\\state", { recursive: true });
-    expect(mocks.openSync).toHaveBeenCalledWith("C:\\state\\default.log", "a");
+    expect(mocks.openSync).toHaveBeenCalledWith(join("C:\\state", "default.log"), "a");
     expect(mocks.spawn).toHaveBeenCalledWith(
       process.execPath,
       expect.arrayContaining(["entry.js", "daemon", "run", "--session", "default", "--version", "1.20.4"]),

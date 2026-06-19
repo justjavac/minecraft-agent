@@ -414,6 +414,7 @@ export class BotController {
   private bot?: MineflayerBot;
   private connected = false;
   private lastError?: string;
+  private readonly controlState: Record<string, boolean> = {};
 
   constructor(
     private readonly options: BotOptions,
@@ -653,7 +654,10 @@ export class BotController {
   }
 
   controls() {
-    return { controlState: safePlain(this.requireBot().controlState) };
+    const botState = safePlain(this.requireBot().controlState);
+    const controlState =
+      botState && typeof botState === "object" && !Array.isArray(botState) ? { ...(botState as Record<string, unknown>) } : {};
+    return { controlState: { ...controlState, ...this.controlState } };
   }
 
   blockAt(x: number, y: number, z: number) {
@@ -693,20 +697,26 @@ export class BotController {
   async tap(state: string, durationMs: number): Promise<void> {
     const bot = this.requireBot();
     bot.setControlState(state, true);
+    this.controlState[state] = true;
     try {
       await new Promise((resolve) => setTimeout(resolve, durationMs));
     } finally {
       bot.setControlState(state, false);
+      this.controlState[state] = false;
     }
   }
 
   setControl(state: string, value: boolean) {
     this.requireBot().setControlState(state, value);
+    this.controlState[state] = value;
     return { state, value };
   }
 
   clearControls() {
     this.requireMethod("clearControlStates").call(this.requireBot());
+    for (const state of Object.keys(this.controlState)) {
+      delete this.controlState[state];
+    }
     return { cleared: true };
   }
 

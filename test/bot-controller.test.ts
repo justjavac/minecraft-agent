@@ -255,8 +255,10 @@ describe("BotController", () => {
     await expect(subject.tabComplete("/gi", true, false, 1000)).resolves.toEqual({ matches: ["hello"] });
     subject.setControl("forward", true);
     expect(bot.setControlState).toHaveBeenCalledWith("forward", true);
+    expect(subject.controls()).toEqual({ controlState: { forward: true } });
     expect(subject.clearControls()).toEqual({ cleared: true });
     expect(bot.clearControlStates).toHaveBeenCalled();
+    expect(subject.controls()).toEqual({ controlState: { forward: false } });
     await subject.look(1, 0.5, true);
     expect(bot.look).toHaveBeenCalledWith(1, 0.5, true);
 

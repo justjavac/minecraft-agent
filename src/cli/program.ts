@@ -110,10 +110,13 @@ const navigateFollowSchema = sessionSchema.extend({
 
 const navigateConfigureSchema = sessionSchema.extend({
   allowDig: z.boolean().optional(),
+  dig: z.boolean().optional(),
   noDig: z.boolean().optional(),
   allowSprinting: z.boolean().optional(),
+  sprinting: z.boolean().optional(),
   noSprinting: z.boolean().optional(),
   allowParkour: z.boolean().optional(),
+  parkour: z.boolean().optional(),
   noParkour: z.boolean().optional(),
   canOpenDoors: z.boolean().optional(),
   maxDropDown: z.coerce.number().int().min(0).max(256).optional(),
@@ -562,9 +565,9 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
       return commandRunner(cmd, io, () =>
         handlers.navigateConfigure({
           session: parsed.session,
-          allowDig: parsed.noDig ? false : parsed.allowDig,
-          allowSprinting: parsed.noSprinting ? false : parsed.allowSprinting,
-          allowParkour: parsed.noParkour ? false : parsed.allowParkour,
+          allowDig: parsed.noDig || parsed.dig === false ? false : parsed.allowDig,
+          allowSprinting: parsed.noSprinting || parsed.sprinting === false ? false : parsed.allowSprinting,
+          allowParkour: parsed.noParkour || parsed.parkour === false ? false : parsed.allowParkour,
           canOpenDoors: parsed.canOpenDoors,
           maxDropDown: parsed.maxDropDown,
           searchRadius: parsed.searchRadius,

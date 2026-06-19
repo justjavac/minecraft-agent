@@ -103,6 +103,40 @@ describe("CLI protocol", () => {
     expect(stdout.value).toContain("Waiting and refreshing");
   });
 
+  it("maps negated navigation configuration flags", async () => {
+    const { program, handlers } = makeProgram();
+    vi.spyOn(handlers, "navigateConfigure").mockResolvedValue({});
+
+    await program.parseAsync([
+      "node",
+      "mc-agent",
+      "navigate",
+      "configure",
+      "--session",
+      "s",
+      "--no-dig",
+      "--no-sprinting",
+      "--no-parkour",
+      "--can-open-doors",
+      "--max-drop-down",
+      "8",
+      "--search-radius",
+      "64",
+    ]);
+
+    expect(handlers.navigateConfigure).toHaveBeenCalledWith({
+      session: "s",
+      allowDig: false,
+      allowSprinting: false,
+      allowParkour: false,
+      canOpenDoors: true,
+      maxDropDown: 8,
+      searchRadius: 64,
+      thinkTimeout: undefined,
+      tickTimeout: undefined,
+    });
+  });
+
   it("routes every command action through the correct handler", async () => {
     const { program, handlers } = makeProgram();
     vi.spyOn(handlers, "sessionStatus").mockResolvedValue({});

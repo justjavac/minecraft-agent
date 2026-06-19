@@ -20,14 +20,6 @@ After the skill is published on [skills.sh](https://www.skills.sh), install it w
 npx skill add minecraft
 ```
 
-During local development from this repository, install or test the skill folder directly:
-
-```bash
-npx skill add ./skills/minecraft
-```
-
-The skill is designed to be installed independently. It does not assume the user has this repository checked out.
-
 ## What The Skill Does
 
 When an agent uses `$minecraft`, the skill tells it to:
@@ -71,24 +63,6 @@ $minecraft inspect my inventory, find mature wheat nearby, harvest it, and repla
 ```text
 $minecraft build a 5x5 dirt platform near my current position, but check inventory and block state before placing
 ```
-
-## Use In Claude Code Or Gemini CLI
-
-If the agent runtime supports skills from `skills.sh`, install the same skill:
-
-```bash
-npx skill add minecraft
-```
-
-Then ask the agent to use the installed `minecraft` skill.
-
-If the runtime does not have native skill support, point it at the installed `SKILL.md` or paste this instruction:
-
-```text
-Use the minecraft skill workflow: ensure mc-agent is installed, run `mc-agent skills get core`, use JSON output, inspect current session/state before acting, react to Minecraft chat only when the bot is directly mentioned or the user asked you to monitor chat, and verify state after every physical action.
-```
-
-The important part is that the agent follows the skill workflow and loads `mc-agent skills get core` from the installed CLI instead of guessing command flags.
 
 ## First Run
 
@@ -192,29 +166,6 @@ The skill deliberately pushes agents toward small, verified actions:
 - Parse JSON errors and follow the returned remediation.
 - Stop and report the blocker when inventory, visibility, coordinates, or session state are uncertain.
 
-## CLI Development
+## License
 
-This repository also contains the `minecraft-agent` npm package that provides `mc-agent`.
-
-Install and verify locally:
-
-```bash
-npm install
-npm run build
-npm run typecheck
-npm test
-```
-
-Run the source CLI during development:
-
-```bash
-npm run dev -- --help
-```
-
-Validate the bundled skill:
-
-```bash
-npx skill validate ./skills/minecraft
-```
-
-The detailed capability requirements live in [docs/capability-requirements.md](docs/capability-requirements.md).
+MIT License. See [LICENSE](LICENSE).

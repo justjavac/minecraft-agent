@@ -33,7 +33,7 @@ const SESSION_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const TOKEN_PATTERN = /^[A-Za-z0-9._~-]{5,}$/;
 
 export function getStateDir(): string {
-  return process.env.MC_AGENT_STATE_DIR ?? join(homedir(), ".minecraft-cli", "sessions");
+  return process.env.MC_AGENT_STATE_DIR ?? join(homedir(), ".minecraft-agent", "sessions");
 }
 
 export function createSessionToken(bytes = 32): string {

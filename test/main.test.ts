@@ -7,9 +7,9 @@ afterEach(() => {
 
 describe("main", () => {
   it("returns Commander and CliError exit codes", async () => {
-    await expect(main(["node", "mc-agent", "skills", "get", "core"])).resolves.toBe(0);
-    await expect(main(["node", "mc-agent", "--help"])).resolves.toBe(0);
-    await expect(main(["node", "mc-agent", "--output", "json", "session", "status", "--session", "missing"])).resolves.toBe(4);
+    await expect(main(["node", "mcagent", "skills", "get", "core"])).resolves.toBe(0);
+    await expect(main(["node", "mcagent", "--help"])).resolves.toBe(0);
+    await expect(main(["node", "mcagent", "--output", "json", "session", "status", "--session", "missing"])).resolves.toBe(4);
   });
 
   it("rethrows unexpected parser errors", async () => {
@@ -23,6 +23,6 @@ describe("main", () => {
     vi.doMock("../src/cli/actions.js", () => ({ createCliHandlers: vi.fn(() => ({})) }));
     const { main: mockedMain } = await import("../src/cli/main.js");
 
-    await expect(mockedMain(["node", "mc-agent"])).rejects.toThrow("unexpected");
+    await expect(mockedMain(["node", "mcagent"])).rejects.toThrow("unexpected");
   });
 });

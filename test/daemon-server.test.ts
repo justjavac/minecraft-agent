@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Vec3 } from "vec3";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDaemon } from "../src/daemon/server.js";
 
@@ -12,20 +13,39 @@ const TOKEN_C = "cccccccccccccccccccccccccccccccc";
 class FakeBot extends EventEmitter {
   username = "AgentBot";
   entity = { position: { x: 1, y: 2, z: 3 } };
+  entities = { "12": { id: 12, name: "cow", type: "mob", position: { x: 3, y: 2, z: 3 } } };
+  players = { Steve: { username: "Steve", entity: { id: 13, username: "Steve", type: "player", position: { x: 4, y: 2, z: 3 } } } };
   game = { dimension: "overworld" };
   health = 20;
   food = 20;
+  heldItem = { name: "dirt", displayName: "Dirt" };
   inventory = { items: () => [{ name: "dirt", displayName: "Dirt", count: 2, slot: 36 }] };
+  registry = { blocksByName: { dirt: { id: 3 } } };
   chat = vi.fn();
   quit = vi.fn();
   setControlState = vi.fn();
   lookAt = vi.fn();
+  blockAt = vi.fn((position: Vec3) => ({ name: "dirt", displayName: "Dirt", type: 3, position }));
+  findBlocks = vi.fn(() => [new Vec3(1, 2, 3)]);
+  equip = vi.fn();
+  dig = vi.fn();
+  placeBlock = vi.fn();
+  activateBlock = vi.fn();
+  pathfinder = {
+    setMovements: vi.fn(),
+    goto: vi.fn(),
+    setGoal: vi.fn(),
+    stop: vi.fn(),
+    isMoving: vi.fn(() => true),
+    isMining: vi.fn(() => false),
+    isBuilding: vi.fn(() => false),
+  };
 }
 
 const tempDirs: string[] = [];
 
 async function makeTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), "mc-agent-daemon-"));
+  const dir = await mkdtemp(join(tmpdir(), "mcagent-daemon-"));
   tempDirs.push(dir);
   return dir;
 }
@@ -235,6 +255,69 @@ describe("daemon server", () => {
       body: JSON.stringify({ x: 4, y: 5, z: 6 }),
     });
     expect(fakeBot.lookAt).toHaveBeenCalledWith(expect.objectContaining({ x: 4, y: 5, z: 6 }));
+
+    const players = await fetch(`http://127.0.0.1:${port}/bot/players`, { headers: { Authorization: `Bearer ${TOKEN_C}` } });
+    expect(await players.json()).toMatchObject({ players: [expect.objectContaining({ username: "Steve", distance: 3 })] });
+
+    const entities = await fetch(`http://127.0.0.1:${port}/bot/entities?radius=10&limit=5`, { headers: { Authorization: `Bearer ${TOKEN_C}` } });
+    expect(await entities.json()).toMatchObject({ entities: [expect.objectContaining({ name: "cow", distance: 2 })] });
+
+    const block = await fetch(`http://127.0.0.1:${port}/world/block?x=7&y=8&z=9`, { headers: { Authorization: `Bearer ${TOKEN_C}` } });
+    expect(await block.json()).toMatchObject({ block: { name: "dirt", position: { x: 7, y: 8, z: 9 } } });
+
+    const found = await fetch(`http://127.0.0.1:${port}/world/find-blocks?name=dirt&radius=16&count=2`, {
+      headers: { Authorization: `Bearer ${TOKEN_C}` },
+    });
+    expect(await found.json()).toMatchObject({ blocks: [{ name: "dirt", position: { x: 1, y: 2, z: 3 } }] });
+
+    await fetch(`http://127.0.0.1:${port}/navigate/goto`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 10, y: 64, z: 10, range: 2 }),
+    });
+    expect(fakeBot.pathfinder.goto).toHaveBeenCalledWith(expect.objectContaining({ x: 10, y: 64, z: 10 }));
+
+    const follow = await fetch(`http://127.0.0.1:${port}/navigate/follow`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ player: "Steve", range: 3 }),
+    });
+    expect(await follow.json()).toMatchObject({ following: "Steve", range: 3 });
+    expect(fakeBot.pathfinder.setGoal).toHaveBeenCalledWith(expect.objectContaining({ entity: fakeBot.players.Steve.entity }), true);
+
+    const navigateStatus = await fetch(`http://127.0.0.1:${port}/navigate/status`, { headers: { Authorization: `Bearer ${TOKEN_C}` } });
+    expect(await navigateStatus.json()).toEqual({ moving: true, mining: false, building: false });
+
+    await fetch(`http://127.0.0.1:${port}/navigate/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_C}` } });
+    expect(fakeBot.pathfinder.stop).toHaveBeenCalled();
+
+    await fetch(`http://127.0.0.1:${port}/inventory/equip`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ item: "dirt", destination: "hand" }),
+    });
+    expect(fakeBot.equip).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }), "hand");
+
+    await fetch(`http://127.0.0.1:${port}/world/dig`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 1, y: 2, z: 3 }),
+    });
+    expect(fakeBot.dig).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }), true);
+
+    await fetch(`http://127.0.0.1:${port}/world/place`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 1, y: 2, z: 3, face: "up", item: "dirt" }),
+    });
+    expect(fakeBot.placeBlock).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }), expect.objectContaining({ x: 0, y: 1, z: 0 }));
+
+    await fetch(`http://127.0.0.1:${port}/world/activate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 1, y: 2, z: 3 }),
+    });
+    expect(fakeBot.activateBlock).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }));
 
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_C}` } });
   });

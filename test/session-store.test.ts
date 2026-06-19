@@ -18,7 +18,7 @@ import {
 const tempDirs: string[] = [];
 
 async function makeTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), "mc-agent-session-"));
+  const dir = await mkdtemp(join(tmpdir(), "mcagent-session-"));
   tempDirs.push(dir);
   return dir;
 }
@@ -109,7 +109,7 @@ describe("session store", () => {
   it("covers state defaults, token validation, and process liveness branches", () => {
     const previous = process.env.MC_AGENT_STATE_DIR;
     delete process.env.MC_AGENT_STATE_DIR;
-    expect(getStateDir()).toContain(".minecraft-cli");
+    expect(getStateDir()).toContain(".minecraft-agent");
     process.env.MC_AGENT_STATE_DIR = "custom-state";
     expect(getStateDir()).toBe("custom-state");
     if (previous === undefined) {

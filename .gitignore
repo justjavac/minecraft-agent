@@ -1,5 +1,5 @@
 node_modules/
 dist/
 coverage/
-.minecraft-cli/
+.minecraft-agent/
 *.log

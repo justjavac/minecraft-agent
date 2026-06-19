@@ -9,7 +9,7 @@ import { createSessionToken, SessionRecord, writeSession } from "../src/session/
 const tempDirs: string[] = [];
 
 async function makeTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), "mc-agent-client-"));
+  const dir = await mkdtemp(join(tmpdir(), "mcagent-client-"));
   tempDirs.push(dir);
   return dir;
 }

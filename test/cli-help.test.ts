@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli/main.js";
 
-describe("mc-agent help", () => {
+describe("mcagent help", () => {
   it("prints help without failing", async () => {
-    const exitCode = await main(["node", "mc-agent", "--help"]);
+    const exitCode = await main(["node", "mcagent", "--help"]);
     expect(exitCode).toBe(0);
   });
 });

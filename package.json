@@ -2,17 +2,49 @@
   "name": "minecraft-agent",
   "version": "1.0.0",
   "description": "Agent-ready Minecraft bot CLI powered by mineflayer.",
+  "keywords": [
+    "minecraft",
+    "mc",
+    "agent",
+    "bot",
+    "automation",
+    "skill"
+  ],
+  "homepage": "https://github.com/justjavac/minecraft-agent#readme",
+  "bugs": {
+    "url": "https://github.com/justjavac/minecraft-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justjavac/minecraft-agent.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "justjavac",
+    "email": "justjavac@gmail.com",
+    "url": "https://github.com/justjavac"
+  },
   "type": "module",
+  "main": "./dist/cli/index.js",
   "bin": {
     "mcagent": "./dist/cli/index.js"
   },
+  "files": [
+    "dist/cli",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/cli/index.ts --format esm --clean --out-dir dist/cli",
     "dev": "tsx src/cli/index.ts",
     "coverage": "vitest run --coverage",
+    "prepack": "npm run build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

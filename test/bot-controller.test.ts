@@ -270,7 +270,11 @@ describe("BotController", () => {
     await expect(subject.toss("dirt", 1)).resolves.toEqual({ tossed: "dirt", count: 1 });
     expect(bot.toss).toHaveBeenCalledWith(3, null, 1);
     await expect(subject.consume()).resolves.toEqual({ consumed: true });
+    bot.heldItem = { name: "fishing_rod", displayName: "Fishing Rod" };
     await expect(subject.fish()).resolves.toEqual({ fished: true });
+    bot.heldItem = null as unknown as FakeBot["heldItem"];
+    await expect(subject.consume()).rejects.toThrow("No held item is equipped to consume.");
+    await expect(subject.fish()).rejects.toThrow("A fishing_rod must be equipped before fishing.");
     expect(subject.activateItem(false)).toEqual({ activated: true, offhand: false });
     expect(subject.deactivateItem()).toEqual({ deactivated: true });
     expect(subject.recipes("stick", 1)).toMatchObject({ item: "stick", recipes: [{ id: "recipe" }] });

@@ -840,12 +840,20 @@ export class BotController {
   }
 
   async consume(): Promise<{ consumed: true }> {
-    await this.requireMethod("consume").call(this.requireBot());
+    const bot = this.requireBot();
+    if (!bot.heldItem) {
+      throw new Error("No held item is equipped to consume.");
+    }
+    await this.requireMethod("consume").call(bot);
     return { consumed: true };
   }
 
   async fish(): Promise<{ fished: true }> {
-    await this.requireMethod("fish").call(this.requireBot());
+    const bot = this.requireBot();
+    if (bot.heldItem?.name !== "fishing_rod") {
+      throw new Error("A fishing_rod must be equipped before fishing.");
+    }
+    await this.requireMethod("fish").call(bot);
     return { fished: true };
   }
 

@@ -7,6 +7,7 @@ export type ErrorCode =
   | "SESSION_ALREADY_RUNNING"
   | "COMMAND_BLOCKED"
   | "DAEMON_ERROR"
+  | "NAVIGATION_FAILED"
   | "NOT_IMPLEMENTED"
   | "UNKNOWN_ERROR";
 
@@ -30,6 +31,10 @@ export function badInput(message: string, remediation = "Check the command help 
 
 export function commandBlocked(message: string, remediation: string): CliError {
   return new CliError("COMMAND_BLOCKED", message, remediation, 3);
+}
+
+export function navigationFailed(message: string, remediation: string): CliError {
+  return new CliError("NAVIGATION_FAILED", message, remediation, 1);
 }
 
 export function sessionNotFound(session: string): CliError {

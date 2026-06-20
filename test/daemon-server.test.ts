@@ -91,7 +91,11 @@ describe("daemon server", () => {
       body: JSON.stringify({ message: "hello" }),
     });
     expect(failed.status).toBe(500);
-    expect(await failed.json()).toEqual({ error: "chat failed" });
+    expect(await failed.json()).toMatchObject({
+      error: "chat failed",
+      code: "DAEMON_ERROR",
+      remediation: expect.stringContaining("daemon log"),
+    });
 
     fakeBot.chat.mockImplementationOnce(() => {
       throw "string failure";
@@ -101,7 +105,7 @@ describe("daemon server", () => {
       headers: { Authorization: `Bearer ${TOKEN_A}`, "Content-Type": "application/json" },
       body: JSON.stringify({ message: "hello" }),
     });
-    expect(await stringFailure.json()).toEqual({ error: "string failure" });
+    expect(await stringFailure.json()).toMatchObject({ error: "string failure", code: "DAEMON_ERROR" });
 
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_A}` } });
   });
@@ -180,6 +184,39 @@ describe("daemon server", () => {
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_A}` } });
   });
 
+  it("filters stored events before applying the response limit", async () => {
+    const dir = await makeTempDir();
+    process.env.MC_AGENT_STATE_DIR = dir;
+    const fakeBot = new FakeBot();
+    const port = 37180 + Math.floor(Math.random() * 1000);
+
+    await runDaemon({
+      session: "filtered-events",
+      controlPort: port,
+      token: TOKEN_A,
+      host: "localhost",
+      port: 25565,
+      username: "AgentBot",
+      auth: "offline",
+      createBotFn: () => fakeBot,
+      exitOnStop: false,
+    });
+
+    fakeBot.emit("entityMoved", fakeBot.entities["12"]);
+    fakeBot.emit("chat", "Alex", "keep", undefined, { text: "keep" });
+    fakeBot.emit("whisper", "Alex", "also keep", undefined, { text: "also keep" });
+
+    const events = await fetch(`http://127.0.0.1:${port}/events?since=0&limit=1&type=chat&type=whisper`, {
+      headers: { Authorization: `Bearer ${TOKEN_A}` },
+    });
+    expect(await events.json()).toMatchObject({
+      events: [expect.objectContaining({ type: "chat", text: "keep" })],
+      lastEventId: 3,
+    });
+
+    await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_A}` } });
+  });
+
   it("streams watch events as NDJSON", async () => {
     const dir = await makeTempDir();
     process.env.MC_AGENT_STATE_DIR = dir;
@@ -197,9 +234,10 @@ describe("daemon server", () => {
       createBotFn: () => fakeBot,
       exitOnStop: false,
     });
+    fakeBot.emit("entityMoved", fakeBot.entities["12"]);
     fakeBot.emit("chat", "Alex", "old", undefined, { text: "old" });
 
-    const response = await fetch(`http://127.0.0.1:${port}/watch`, {
+    const response = await fetch(`http://127.0.0.1:${port}/watch?type=chat`, {
       headers: { Authorization: `Bearer ${TOKEN_B}` },
     });
     const reader = response.body!.getReader();
@@ -207,11 +245,47 @@ describe("daemon server", () => {
     const { value } = await reader.read();
     const line = Buffer.from(value!).toString("utf8").trim();
     expect(JSON.parse(line)).toMatchObject({ type: "chat", sender: "Alex", text: "old" });
+    fakeBot.emit("entityMoved", fakeBot.entities["12"]);
     fakeBot.emit("chat", "Alex", "ping", undefined, { text: "ping" });
     const next = await reader.read();
     expect(JSON.parse(Buffer.from(next.value!).toString("utf8").trim())).toMatchObject({ text: "ping" });
     await reader.cancel();
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_B}` } });
+  });
+
+  it("returns structured navigation failures", async () => {
+    const dir = await makeTempDir();
+    process.env.MC_AGENT_STATE_DIR = dir;
+    const fakeBot = new FakeBot();
+    fakeBot.pathfinder.goto.mockRejectedValueOnce(new Error("Took to long to decide path to goal!"));
+    const port = 38180 + Math.floor(Math.random() * 1000);
+
+    await runDaemon({
+      session: "navigation-failure",
+      controlPort: port,
+      token: TOKEN_C,
+      host: "localhost",
+      port: 25565,
+      username: "AgentBot",
+      auth: "offline",
+      createBotFn: () => fakeBot,
+      exitOnStop: false,
+    });
+
+    const failed = await fetch(`http://127.0.0.1:${port}/navigate/goto`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 10, y: 64, z: 10, range: 2 }),
+    });
+
+    expect(failed.status).toBe(409);
+    expect(await failed.json()).toMatchObject({
+      error: "Took to long to decide path to goal!",
+      code: "NAVIGATION_FAILED",
+      remediation: expect.stringContaining("closer reachable goal"),
+    });
+
+    await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_C}` } });
   });
 
   it("supports chat, position, inventory, control tap, and look at endpoints", async () => {

@@ -33,6 +33,49 @@ function isAuthorized(request: IncomingMessage, token: string): boolean {
   return request.headers.authorization === `Bearer ${token}`;
 }
 
+function eventTypesFromSearch(url: URL): string[] {
+  return url.searchParams
+    .getAll("type")
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function eventMatchesTypes(event: { type: string }, types: readonly string[]): boolean {
+  return types.length === 0 || types.includes(event.type);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isNavigationFailure(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized.includes("pathfinder") || normalized.includes("path to goal") || normalized.includes("no path") || normalized.includes("goal");
+}
+
+function daemonErrorResponse(error: unknown) {
+  const message = errorMessage(error);
+  if (isNavigationFailure(message)) {
+    return {
+      statusCode: 409,
+      body: {
+        error: message,
+        code: "NAVIGATION_FAILED",
+        remediation: "Inspect bot position, nearby blocks, and navigate status; then try a closer reachable goal or adjust pathfinder configuration.",
+      },
+    };
+  }
+  return {
+    statusCode: 500,
+    body: {
+      error: message,
+      code: "DAEMON_ERROR",
+      remediation: "Inspect session status and the daemon log; restart the session daemon only if it is unhealthy.",
+    },
+  };
+}
+
 export async function runDaemon(options: DaemonOptions): Promise<void> {
   const events = new EventStore();
   const controller = new BotController(options, events, options.createBotFn);
@@ -68,18 +111,24 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
       if (request.method === "GET" && url.pathname === "/events") {
         const since = Number(url.searchParams.get("since") ?? "0");
         const limit = Number(url.searchParams.get("limit") ?? "50");
-        sendJson(response, 200, { events: events.list(since, limit), lastEventId: events.getLastEventId() });
+        const types = eventTypesFromSearch(url);
+        sendJson(response, 200, { events: events.list(since, limit, types), lastEventId: events.getLastEventId() });
         return;
       }
 
       if (request.method === "GET" && url.pathname === "/watch") {
         const since = Number(url.searchParams.get("since") ?? "0");
+        const types = eventTypesFromSearch(url);
         response.writeHead(200, { "Content-Type": "application/x-ndjson" });
         response.flushHeaders();
-        for (const event of events.list(since, 1000)) {
+        for (const event of events.list(since, 1000, types)) {
           response.write(`${JSON.stringify(event)}\n`);
         }
-        const unsubscribe = events.subscribe((event) => response.write(`${JSON.stringify(event)}\n`));
+        const unsubscribe = events.subscribe((event) => {
+          if (eventMatchesTypes(event, types)) {
+            response.write(`${JSON.stringify(event)}\n`);
+          }
+        });
         request.on("close", unsubscribe);
         return;
       }
@@ -753,7 +802,8 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
 
       sendJson(response, 404, { error: "not found" });
     } catch (error) {
-      sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+      const { statusCode, body } = daemonErrorResponse(error);
+      sendJson(response, statusCode, body);
     }
   });
 

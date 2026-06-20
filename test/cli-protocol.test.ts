@@ -12,11 +12,11 @@ class MemoryStream extends Writable {
   }
 }
 
-function makeProgram() {
+function makeProgram(version = "0.0.0") {
   const stdout = new MemoryStream();
   const stderr = new MemoryStream();
   const handlers = createPlaceholderHandlers();
-  const program = buildProgram(handlers, { stdout, stderr, isStdoutTty: false });
+  const program = buildProgram(handlers, { stdout, stderr, isStdoutTty: false }, version);
   program.exitOverride();
   return { program, handlers, stdout, stderr };
 }
@@ -50,6 +50,12 @@ describe("CLI protocol", () => {
     await program.parseAsync(["node", "mc-agent", "session", "start"]);
 
     expect(stdout.value).toBe("Started session default\n");
+  });
+
+  it("uses the provided CLI version", () => {
+    const { program } = makeProgram("9.8.7");
+
+    expect(program.version()).toBe("9.8.7");
   });
 
   it("blocks slash commands unless explicitly allowed", async () => {
@@ -207,8 +213,8 @@ describe("CLI protocol", () => {
     expect(handlers.sessionStatus).toHaveBeenCalledWith({ session: "s" });
     expect(handlers.listSessions).toHaveBeenCalledWith();
     expect(handlers.stopSession).toHaveBeenCalledWith({ session: "s" });
-    expect(handlers.observeEvents).toHaveBeenCalledWith({ session: "s", since: 2, limit: 3 });
-    expect(handlers.observeWatch).toHaveBeenCalledWith({ session: "s", since: 4 });
+    expect(handlers.observeEvents).toHaveBeenCalledWith({ session: "s", since: 2, limit: 3, types: [] });
+    expect(handlers.observeWatch).toHaveBeenCalledWith({ session: "s", since: 4, types: [] });
     expect(handlers.sendChat).toHaveBeenCalledWith({ session: "s", message: "/say hi", allowCommand: true });
     expect(handlers.botPosition).toHaveBeenCalledWith({ session: "s" });
     expect(handlers.botInventory).toHaveBeenCalledWith({ session: "s" });
@@ -234,6 +240,36 @@ describe("CLI protocol", () => {
       auth: "offline",
       detach: false,
       controlPort: 4567,
+    });
+  });
+
+  it("parses observe event type filters", async () => {
+    const { program, handlers } = makeProgram();
+    vi.spyOn(handlers, "observeEvents").mockResolvedValue({});
+    vi.spyOn(handlers, "observeWatch").mockResolvedValue(undefined);
+
+    await program.parseAsync([
+      "node",
+      "mc-agent",
+      "observe",
+      "events",
+      "--type",
+      "chat,whisper",
+      "--type",
+      "message",
+    ]);
+    await program.parseAsync(["node", "mc-agent", "observe", "watch", "--type", "chat"]);
+
+    expect(handlers.observeEvents).toHaveBeenCalledWith({
+      session: "default",
+      since: 0,
+      limit: 50,
+      types: ["chat", "whisper", "message"],
+    });
+    expect(handlers.observeWatch).toHaveBeenCalledWith({
+      session: "default",
+      since: 0,
+      types: ["chat"],
     });
   });
 

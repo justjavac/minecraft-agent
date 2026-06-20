@@ -1,7 +1,7 @@
 import { Writable } from "node:stream";
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
-import { badInput, CliError, commandBlocked, normalizeError, notImplemented, sessionNotFound } from "../src/output/errors.js";
+import { badInput, CliError, commandBlocked, navigationFailed, normalizeError, notImplemented, sessionNotFound } from "../src/output/errors.js";
 import { failure, formatDefaultText, resolveOutputMode, success, writeJson, writeText } from "../src/output/response.js";
 
 class MemoryStream extends Writable {
@@ -17,6 +17,7 @@ describe("output errors", () => {
   it("creates typed CLI errors", () => {
     expect(badInput("bad")).toMatchObject({ code: "BAD_INPUT", exitCode: 3 });
     expect(commandBlocked("blocked", "fix")).toMatchObject({ code: "COMMAND_BLOCKED", remediation: "fix" });
+    expect(navigationFailed("stuck", "try closer")).toMatchObject({ code: "NAVIGATION_FAILED", remediation: "try closer" });
     expect(sessionNotFound("x")).toMatchObject({ code: "SESSION_NOT_FOUND", exitCode: 4 });
     expect(notImplemented("feature")).toMatchObject({ code: "NOT_IMPLEMENTED", message: "feature is not implemented yet." });
   });

@@ -17,10 +17,12 @@ export interface SessionInput {
 export interface EventsInput extends SessionInput {
   since: number;
   limit: number;
+  types: string[];
 }
 
 export interface WatchInput extends SessionInput {
   since: number;
+  types: string[];
 }
 
 export interface ChatInput extends SessionInput {

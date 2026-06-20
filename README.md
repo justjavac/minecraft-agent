@@ -90,6 +90,7 @@ Check status and read recent events:
 ```bash
 mc-agent --output json session status --session default
 mc-agent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json observe events --session default --since 0 --limit 50 --type chat --type whisper --type message
 ```
 
 Stop the bot:
@@ -100,7 +101,7 @@ mc-agent --output json session stop --session default
 
 ## Wait For Player Mentions
 
-The skill supports bounded chat-driven agent loops. The agent should read events with `observe events` or `observe watch`, track the latest event id, and respond only when the active user goal and approved trigger allow it.
+The skill supports bounded chat-driven agent loops. The agent should read events with `observe events` or `observe watch`, track the latest event id, and respond only when the active user goal and approved trigger allow it. Use `--type chat --type whisper --type message` when monitoring chat so entity movement does not drown out player messages.
 
 Mention triggers:
 

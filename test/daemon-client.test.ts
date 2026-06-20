@@ -67,13 +67,19 @@ describe("daemon client", () => {
 
   it("maps daemon HTTP failures to CliError", async () => {
     const saved = record({ token: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "boom" }), { status: 500 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "boom", code: "NAVIGATION_FAILED", remediation: "try a closer goal" }), { status: 409 }),
+      ),
+    );
 
     const request = daemonRequest(saved, "/status");
     await expect(request).rejects.toBeInstanceOf(CliError);
     await expect(request).rejects.toMatchObject({
-      code: "DAEMON_ERROR",
+      code: "NAVIGATION_FAILED",
       message: "boom",
+      remediation: "try a closer goal",
       exitCode: 1,
     });
   });
@@ -87,6 +93,7 @@ describe("daemon client", () => {
     await expect(daemonRequest(saved, "/down")).rejects.toMatchObject({
       code: "DAEMON_ERROR",
       message: "Daemon returned HTTP 503.",
+      remediation: expect.stringContaining("daemon log"),
     });
   });
 });

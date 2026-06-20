@@ -31,8 +31,11 @@ export class EventStore {
     return stored;
   }
 
-  list(since: number, limit: number): BotEvent[] {
-    return this.events.filter((event) => event.id > since).slice(0, limit);
+  list(since: number, limit: number, types: readonly string[] = []): BotEvent[] {
+    const typeFilter = types.length > 0 ? new Set(types) : undefined;
+    return this.events
+      .filter((event) => event.id > since && (!typeFilter || typeFilter.has(event.type)))
+      .slice(0, limit);
   }
 
   getLastEventId(): number {

@@ -68,12 +68,14 @@ Use stored events for normal agent loops:
 
 \`\`\`bash
 mc-agent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json observe events --session default --since 0 --limit 50 --type chat --type whisper --type message
 \`\`\`
 
 Use streaming when the task is to continuously react:
 
 \`\`\`bash
 mc-agent observe watch --session default --since 0 --output json
+mc-agent observe watch --session default --since 0 --type chat --type whisper --type message --output json
 \`\`\`
 
 Important event types:
@@ -251,10 +253,10 @@ If \`session status\` reports disconnected, kicked, ended, dead, not spawned, or
 ### React to new player chat
 
 \`\`\`bash
-mc-agent --output json observe events --session default --since <lastEventId> --limit 50
+mc-agent --output json observe events --session default --since <lastEventId> --limit 50 --type chat --type whisper --type message
 # If a new chat/whisper/message needs a response:
 mc-agent --output json chat send --session default --message "<short reply>"
-mc-agent --output json observe events --session default --since <newLastEventId>
+mc-agent --output json observe events --session default --since <newLastEventId> --type chat --type whisper --type message
 \`\`\`
 
 Update \`lastEventId\` after reading events, not after sending chat. This prevents old chat from being handled twice while still capturing the server/player response after your message.
@@ -263,7 +265,7 @@ Update \`lastEventId\` after reading events, not after sending chat. This preven
 
 \`\`\`bash
 mc-agent --output json session status --session default
-mc-agent --output json observe events --session default --since <lastEventId> --limit 50
+mc-agent --output json observe events --session default --since <lastEventId> --limit 50 --type chat --type whisper --type message
 # If a whisper, @<botUsername>, or direct address requests an action:
 mc-agent --output json bot position --session default
 mc-agent --output json bot inventory --session default
@@ -378,6 +380,7 @@ Collection pathfinds near a visible item entity and relies on normal Minecraft p
 
 \`\`\`bash
 mc-agent observe watch --session default --since <lastEventId> --output json
+mc-agent observe watch --session default --since <lastEventId> --type chat --type whisper --type message --output json
 \`\`\`
 
 Read each NDJSON line as one event. Keep track of the largest event id. Stop the watcher when the user task is complete.
@@ -400,7 +403,9 @@ Read each NDJSON line as one event. Keep track of the largest event id. Stop the
 
 \`COMMAND_BLOCKED\`: the message starts with \`/\`; add \`--allow-command\` only when intentional.
 
-\`DAEMON_ERROR\`: restart the session and inspect the state-directory log.
+\`DAEMON_ERROR\`: inspect \`session status\` and the state-directory log; restart only if the daemon is unhealthy.
+
+\`NAVIGATION_FAILED\`: inspect \`navigate status\`, \`bot position\`, and nearby blocks, then try a closer reachable goal or adjust pathfinder configuration.
 
 No chat events: confirm the bot is connected, the server is local/offline compatible, and read \`session status\`.
 
@@ -440,7 +445,9 @@ Observe:
 
 \`\`\`bash
 mc-agent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json observe events --session default --since 0 --limit 50 --type chat --type whisper
 mc-agent observe watch --session default --since 0 --output json
+mc-agent observe watch --session default --since 0 --type chat --type whisper --output json
 \`\`\`
 
 Chat:

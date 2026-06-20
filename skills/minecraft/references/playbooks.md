@@ -43,9 +43,9 @@ Use this loop when the user asks the agent to watch chat and respond:
 
 ```bash
 mc-agent --output json session status --session default
-mc-agent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json observe events --session default --since 0 --limit 50 --type chat --type whisper --type message
 mc-agent --output json chat send --session default --message "<short reply>"
-mc-agent --output json observe events --session default --since <previousLastEventId> --limit 50
+mc-agent --output json observe events --session default --since <previousLastEventId> --limit 50 --type chat --type whisper --type message
 ```
 
 Rules:
@@ -64,19 +64,19 @@ Start from the latest known event id:
 
 ```bash
 mc-agent --output json session status --session default
-mc-agent --output json observe events --session default --since 0 --limit 50
+mc-agent --output json observe events --session default --since 0 --limit 50 --type chat --type whisper --type message
 ```
 
 Then either poll:
 
 ```bash
-mc-agent --output json observe events --session default --since <lastEventId> --limit 50
+mc-agent --output json observe events --session default --since <lastEventId> --limit 50 --type chat --type whisper --type message
 ```
 
 Or stream:
 
 ```bash
-mc-agent observe watch --session default --since <lastEventId> --output json
+mc-agent observe watch --session default --since <lastEventId> --type chat --type whisper --type message --output json
 ```
 
 Trigger only on:

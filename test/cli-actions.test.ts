@@ -88,7 +88,7 @@ describe("CLI actions", () => {
 
     await handlers.sessionStatus({ session: "default" });
     await handlers.stopSession({ session: "default" });
-    await handlers.observeEvents({ session: "default", since: 3, limit: 10 });
+    await handlers.observeEvents({ session: "default", since: 3, limit: 10, types: [] });
     await handlers.sendChat({ session: "default", message: "hello", allowCommand: false });
     await handlers.sendWhisper({ session: "default", username: "Steve", message: "hi" });
     await handlers.tabComplete({ session: "default", text: "/gi", assumeCommand: true, sendBlockInSight: false, timeout: 1000 });
@@ -185,6 +185,8 @@ describe("CLI actions", () => {
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/status");
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/stop", { method: "POST", body: "{}" });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/events?since=3&limit=10");
+    await handlers.observeEvents({ session: "default", since: 4, limit: 20, types: ["chat", "whisper"] });
+    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/events?since=4&limit=20&type=chat&type=whisper");
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/chat", { method: "POST", body: JSON.stringify({ message: "hello" }) });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/chat/whisper", { method: "POST", body: JSON.stringify({ username: "Steve", message: "hi" }) });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/chat/tab-complete", {
@@ -379,26 +381,33 @@ describe("CLI actions", () => {
     const record = { session: "default", token: "secret", controlPort: 3000 };
     mocks.loadSessionForClient.mockResolvedValue(record);
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const watchResponse = () =>
+      new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"id":1}\n'));
+          controller.close();
+        },
+      }));
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(new ReadableStream({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode('{"id":1}\n'));
-            controller.close();
-          },
-        })),
-      ),
+      vi.fn()
+        .mockResolvedValueOnce(watchResponse())
+        .mockResolvedValueOnce(watchResponse()),
     );
 
-    await handlers.observeWatch({ session: "default", since: 7 });
+    await handlers.observeWatch({ session: "default", since: 7, types: [] });
     expect(fetch).toHaveBeenCalledWith("http://127.0.0.1:3000/watch?since=7", {
       headers: { Authorization: "Bearer secret" },
     });
     expect(write).toHaveBeenCalledWith(Buffer.from('{"id":1}\n'));
 
+    await handlers.observeWatch({ session: "default", since: 8, types: ["chat", "message"] });
+    expect(fetch).toHaveBeenCalledWith("http://127.0.0.1:3000/watch?since=8&type=chat&type=message", {
+      headers: { Authorization: "Bearer secret" },
+    });
+
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 500 })));
-    await expect(handlers.observeWatch({ session: "default", since: 0 })).rejects.toMatchObject({ code: "DAEMON_ERROR" });
+    await expect(handlers.observeWatch({ session: "default", since: 0, types: [] })).rejects.toMatchObject({ code: "DAEMON_ERROR" });
   });
 
   it("requires a daemon token before running the daemon command", async () => {

@@ -16,6 +16,20 @@ const sessionSchema = z.object({
   session: z.string().min(1).default("default"),
 });
 
+function collectEventType(value: string, previous: string[] = []): string[] {
+  return previous.concat(value);
+}
+
+function normalizeEventTypes(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : value === undefined ? [] : [value];
+  return values
+    .flatMap((item) => String(item).split(","))
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const eventTypesSchema = z.preprocess(normalizeEventTypes, z.array(z.string().min(1)));
+
 const startSchema = sessionSchema.extend({
   host: z.string().min(1).default("localhost"),
   port: z.coerce.number().int().positive().max(65535).default(25565),
@@ -28,11 +42,13 @@ const startSchema = sessionSchema.extend({
 const eventsSchema = sessionSchema.extend({
   since: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(1000).default(50),
-});
+  type: eventTypesSchema,
+}).transform(({ type, ...input }) => ({ ...input, types: type }));
 
 const watchSchema = sessionSchema.extend({
   since: z.coerce.number().int().min(0).default(0),
-});
+  type: eventTypesSchema,
+}).transform(({ type, ...input }) => ({ ...input, types: type }));
 
 const chatSchema = sessionSchema.extend({
   message: z.string().min(1),
@@ -309,13 +325,13 @@ function commandRunner<T>(
   };
 }
 
-export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
+export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"): Command {
   const program = new Command();
 
   program
     .name("mc-agent")
     .description("Agent-ready Minecraft bot CLI powered by mineflayer.")
-    .version("1.0.0")
+    .version(version)
     .option("--output <mode>", "output mode: json or text")
     .showHelpAfterError();
 
@@ -365,6 +381,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
     .option("--session <name>", "session name", "default")
     .option("--since <eventId>", "return events after this id", "0")
     .option("--limit <count>", "maximum events to return", "50")
+    .option("--type <eventType>", "include only this event type; repeat or comma-separate for multiple types", collectEventType, [])
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.observeEvents(eventsSchema.parse(opts)))());
 
   observe
@@ -372,6 +389,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo): Command {
     .description("Watch new bot events as newline-delimited JSON")
     .option("--session <name>", "session name", "default")
     .option("--since <eventId>", "return events after this id", "0")
+    .option("--type <eventType>", "include only this event type; repeat or comma-separate for multiple types", collectEventType, [])
     .action(async (opts, cmd) => {
       resolveOutputMode(cmd.optsWithGlobals().output, io.isStdoutTty);
       await handlers.observeWatch(watchSchema.parse(opts));

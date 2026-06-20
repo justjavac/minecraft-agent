@@ -6,6 +6,12 @@ import { runDaemon } from "../daemon/server.js";
 import { spawnSessionDaemon } from "../daemon/spawn.js";
 import { listSessions, readSession, removeSession, toPublicSession } from "../session/store.js";
 
+function appendEventTypes(params: URLSearchParams, types: readonly string[]): void {
+  for (const type of types) {
+    params.append("type", type);
+  }
+}
+
 export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): CliHandlers {
   return {
     async startSession(input) {
@@ -53,12 +59,16 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
 
     async observeEvents(input) {
       const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, `/events?since=${input.since}&limit=${input.limit}`);
+      const params = new URLSearchParams({ since: String(input.since), limit: String(input.limit) });
+      appendEventTypes(params, input.types);
+      return daemonRequest(record, `/events?${params.toString()}`);
     },
 
     async observeWatch(input) {
       const record = await loadSessionForClient(input.session);
-      const response = await fetch(`http://127.0.0.1:${record.controlPort}/watch?since=${input.since}`, {
+      const params = new URLSearchParams({ since: String(input.since) });
+      appendEventTypes(params, input.types);
+      const response = await fetch(`http://127.0.0.1:${record.controlPort}/watch?${params.toString()}`, {
         headers: { Authorization: `Bearer ${record.token}` },
       });
       if (!response.ok || !response.body) {

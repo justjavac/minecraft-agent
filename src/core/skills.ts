@@ -45,7 +45,7 @@ Use this checklist before any world-changing action:
 
 \`\`\`bash
 # Start a local/offline server session
-mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline
 
 # Check that the bot is connected
 mc-agent --output json session status --session default
@@ -435,7 +435,7 @@ const FULL_REFERENCE = `## Full command reference
 Session:
 
 \`\`\`bash
-mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline
 mc-agent --output json session status --session default
 mc-agent --output json session list
 mc-agent --output json session stop --session default

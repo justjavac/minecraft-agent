@@ -82,7 +82,7 @@ mc-agent --help
 Start a local/offline bot session:
 
 ```bash
-mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline
 ```
 
 Check status and read recent events:

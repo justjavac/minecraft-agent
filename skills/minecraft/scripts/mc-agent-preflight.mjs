@@ -41,7 +41,7 @@ if (status.exitCode === 0 && parsed?.ok === true) {
     username: data.username,
     next: connected
       ? `Read events with '${options.bin} --output json observe events --session ${options.session} --since ${data.lastEventId ?? 0} --limit 50'.`
-      : `Start or inspect the session before acting: '${options.bin} --output json session start --session ${options.session} --detach'.`,
+      : `Start or inspect the session before acting: '${options.bin} --output json session start --session ${options.session}'.`,
     status: data,
   });
   process.exit(connected ? 0 : 1);
@@ -57,7 +57,7 @@ print({
   remediation: error?.remediation,
   next:
     error?.code === "SESSION_NOT_FOUND"
-      ? `${options.bin} --output json session start --session ${options.session} --host localhost --port 25565 --username AgentBot --auth offline --detach`
+      ? `${options.bin} --output json session start --session ${options.session} --host localhost --port 25565 --username AgentBot --auth offline`
       : "Stop and surface the remediation before taking Minecraft actions.",
 });
 process.exit(status.exitCode === 0 ? 1 : status.exitCode);

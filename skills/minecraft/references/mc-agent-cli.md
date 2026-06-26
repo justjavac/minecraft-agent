@@ -51,7 +51,7 @@ Exit codes:
 Start a local/offline session:
 
 ```bash
-mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline --detach
+mc-agent --output json session start --session default --host localhost --port 25565 --username AgentBot --auth offline
 ```
 
 Inspect sessions:

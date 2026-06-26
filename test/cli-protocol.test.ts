@@ -67,21 +67,6 @@ describe("CLI protocol", () => {
     expect(JSON.parse(stdout.value)).toEqual({ ok: true, data: { session: "default" } });
   });
 
-  it("accepts deprecated detach flag without adding it to handler input", async () => {
-    const { program, handlers } = makeProgram();
-    vi.spyOn(handlers, "startSession").mockResolvedValue({ session: "default" });
-
-    await program.parseAsync(["node", "mc-agent", "session", "start", "--detach"]);
-
-    expect(handlers.startSession).toHaveBeenCalledWith({
-      session: "default",
-      host: "localhost",
-      port: 25565,
-      username: "AgentBot",
-      auth: "offline",
-    });
-  });
-
   it("uses default text formatter fallback for start sessions without names", async () => {
     const stdout = new MemoryStream();
     const stderr = new MemoryStream();

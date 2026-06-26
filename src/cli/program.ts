@@ -1,5 +1,5 @@
 import { Writable } from "node:stream";
-import { Command, Option } from "commander";
+import { Command } from "commander";
 import { z } from "zod";
 import { getSkillContent } from "../core/skills.js";
 import { commandBlocked, normalizeError } from "../output/errors.js";
@@ -345,7 +345,6 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .option("--username <name>", "bot username", "AgentBot")
     .option("--auth <mode>", "mineflayer auth mode", "offline")
     .option("--version <version>", "Minecraft protocol version")
-    .addOption(new Option("--detach", "deprecated; sessions always run in the background").hideHelp())
     .action((opts, cmd) =>
       commandRunner(
         cmd,

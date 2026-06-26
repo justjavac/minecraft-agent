@@ -237,11 +237,17 @@ describe("BotController", () => {
     expect(subject.follow("Steve", 2)).toMatchObject({ following: "Steve", range: 2, targetPosition: { x: 4, y: 2, z: 3 } });
     expect(bot.pathfinder.setGoal).toHaveBeenCalledWith(expect.objectContaining({ entity: bot.players.Steve.entity }), true);
     expect(subject.navigationStatus()).toEqual({ moving: false, mining: false, building: false });
-    expect(subject.configureNavigation({ allowDig: false, searchRadius: 32 })).toMatchObject({
+    expect(subject.configureNavigation({ allowDig: false, allowSprinting: false, maxDropDown: 2, searchRadius: 32 })).toMatchObject({
       configured: true,
       searchRadius: 32,
-      movements: { canDig: false },
+      movements: { canDig: false, allowSprinting: false, maxDropDown: 2 },
     });
+    const movements = bot.pathfinder.movements as { canDig: boolean; allowSprinting: boolean; maxDropDown: number };
+    movements.canDig = true;
+    movements.allowSprinting = true;
+    movements.maxDropDown = 4;
+    await subject.goto(12, 64, -2, 1);
+    expect(bot.pathfinder.movements).toMatchObject({ canDig: false, allowSprinting: false, maxDropDown: 2 });
     await expect(subject.collectItem(10, 1)).resolves.toMatchObject({ collectedTarget: { id: 10 } });
     expect(subject.stopNavigation()).toEqual({ stopped: true });
     expect(bot.pathfinder.stop).toHaveBeenCalled();

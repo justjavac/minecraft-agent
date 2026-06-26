@@ -177,6 +177,13 @@ type MineflayerVillagerTrade = {
   realPrice?: number;
 };
 type MineflayerVillager = MineflayerWindow & { trades?: MineflayerVillagerTrade[] };
+type NavigationMovementConfig = {
+  canDig?: boolean;
+  allowSprinting?: boolean;
+  allowParkour?: boolean;
+  canOpenDoors?: boolean;
+  maxDropDown?: number;
+};
 
 const passiveEntityNames = new Set([
   "allay",
@@ -415,6 +422,7 @@ export class BotController {
   private connected = false;
   private lastError?: string;
   private readonly controlState: Record<string, boolean> = {};
+  private readonly navigationMovementConfig: NavigationMovementConfig = {};
 
   constructor(
     private readonly options: BotOptions,
@@ -772,16 +780,12 @@ export class BotController {
     tickTimeout?: number;
   }) {
     const pathfinder = this.requirePathfinder();
-    this.configurePathfinderMovements();
-    const movements = pathfinder.movements;
-    if (movements) {
-      if (input.allowDig !== undefined) movements.canDig = input.allowDig;
-      if (input.allowSprinting !== undefined) movements.allowSprinting = input.allowSprinting;
-      if (input.allowParkour !== undefined) movements.allowParkour = input.allowParkour;
-      if (input.canOpenDoors !== undefined) movements.canOpenDoors = input.canOpenDoors;
-      if (input.maxDropDown !== undefined) movements.maxDropDown = input.maxDropDown;
-      pathfinder.setMovements(movements);
-    }
+    if (input.allowDig !== undefined) this.navigationMovementConfig.canDig = input.allowDig;
+    if (input.allowSprinting !== undefined) this.navigationMovementConfig.allowSprinting = input.allowSprinting;
+    if (input.allowParkour !== undefined) this.navigationMovementConfig.allowParkour = input.allowParkour;
+    if (input.canOpenDoors !== undefined) this.navigationMovementConfig.canOpenDoors = input.canOpenDoors;
+    if (input.maxDropDown !== undefined) this.navigationMovementConfig.maxDropDown = input.maxDropDown;
+    const movements = this.configurePathfinderMovements();
     if (input.searchRadius !== undefined) pathfinder.searchRadius = input.searchRadius;
     if (input.thinkTimeout !== undefined) pathfinder.thinkTimeout = input.thinkTimeout;
     if (input.tickTimeout !== undefined) pathfinder.tickTimeout = input.tickTimeout;
@@ -1465,11 +1469,32 @@ export class BotController {
     }
   }
 
-  private configurePathfinderMovements(): void {
+  private configurePathfinderMovements(): PathfinderMovements | undefined {
     const bot = this.requireBot();
-    if (!bot.pathfinder || !bot.registry?.blocksByName || !bot.registry.blocksArray || !bot.registry.itemsByName) {
-      return;
+    if (!bot.pathfinder) {
+      return undefined;
     }
-    bot.pathfinder.setMovements(new Movements(bot as never));
+    const movements = bot.pathfinder.movements ?? this.createPathfinderMovements(bot);
+    if (!movements) {
+      return undefined;
+    }
+    this.applyNavigationMovementConfig(movements);
+    bot.pathfinder.setMovements(movements);
+    return movements;
+  }
+
+  private createPathfinderMovements(bot: MineflayerBot): PathfinderMovements | undefined {
+    if (!bot.registry?.blocksByName || !bot.registry.blocksArray || !bot.registry.itemsByName) {
+      return undefined;
+    }
+    return new Movements(bot as never);
+  }
+
+  private applyNavigationMovementConfig(movements: PathfinderMovements): void {
+    if (this.navigationMovementConfig.canDig !== undefined) movements.canDig = this.navigationMovementConfig.canDig;
+    if (this.navigationMovementConfig.allowSprinting !== undefined) movements.allowSprinting = this.navigationMovementConfig.allowSprinting;
+    if (this.navigationMovementConfig.allowParkour !== undefined) movements.allowParkour = this.navigationMovementConfig.allowParkour;
+    if (this.navigationMovementConfig.canOpenDoors !== undefined) movements.canOpenDoors = this.navigationMovementConfig.canOpenDoors;
+    if (this.navigationMovementConfig.maxDropDown !== undefined) movements.maxDropDown = this.navigationMovementConfig.maxDropDown;
   }
 }

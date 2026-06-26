@@ -65,7 +65,6 @@ const input = {
   port: 25565,
   username: "AgentBot",
   auth: "offline",
-  detach: true,
 };
 
 afterEach(() => {

@@ -2,13 +2,11 @@ import { ZodError } from "zod";
 
 export type ErrorCode =
   | "BAD_INPUT"
-  | "CONNECTION_FAILED"
   | "SESSION_NOT_FOUND"
   | "SESSION_ALREADY_RUNNING"
   | "COMMAND_BLOCKED"
   | "DAEMON_ERROR"
   | "NAVIGATION_FAILED"
-  | "NOT_IMPLEMENTED"
   | "UNKNOWN_ERROR";
 
 export class CliError extends Error {
@@ -33,25 +31,12 @@ export function commandBlocked(message: string, remediation: string): CliError {
   return new CliError("COMMAND_BLOCKED", message, remediation, 3);
 }
 
-export function navigationFailed(message: string, remediation: string): CliError {
-  return new CliError("NAVIGATION_FAILED", message, remediation, 1);
-}
-
 export function sessionNotFound(session: string): CliError {
   return new CliError(
     "SESSION_NOT_FOUND",
     `Session '${session}' is not running.`,
     "Start it with 'mc-agent session start --session <name>'.",
     4,
-  );
-}
-
-export function notImplemented(feature: string): CliError {
-  return new CliError(
-    "NOT_IMPLEMENTED",
-    `${feature} is not implemented yet.`,
-    "Finish the daemon implementation and retry.",
-    1,
   );
 }
 

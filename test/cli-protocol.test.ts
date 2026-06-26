@@ -1,7 +1,7 @@
 import { Writable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import { buildProgram } from "../src/cli/program.js";
-import { createPlaceholderHandlers } from "../src/cli/handlers.js";
+import type { CliHandlers } from "../src/cli/handlers.js";
 
 class MemoryStream extends Writable {
   value = "";
@@ -12,10 +12,39 @@ class MemoryStream extends Writable {
   }
 }
 
+function createMockHandlers(): CliHandlers {
+  const target: Record<string, unknown> = {};
+
+  return new Proxy(target, {
+    get(object, property) {
+      if (typeof property !== "string") {
+        return undefined;
+      }
+      object[property] ??= vi.fn(async () => ({}));
+      return object[property];
+    },
+    getOwnPropertyDescriptor(object, property) {
+      if (typeof property !== "string") {
+        return undefined;
+      }
+      object[property] ??= vi.fn(async () => ({}));
+      return {
+        configurable: true,
+        enumerable: true,
+        value: object[property],
+        writable: true,
+      };
+    },
+    has(_object, property) {
+      return typeof property === "string";
+    },
+  }) as unknown as CliHandlers;
+}
+
 function makeProgram(version = "0.0.0") {
   const stdout = new MemoryStream();
   const stderr = new MemoryStream();
-  const handlers = createPlaceholderHandlers();
+  const handlers = createMockHandlers();
   const program = buildProgram(handlers, { stdout, stderr, isStdoutTty: false }, version);
   program.exitOverride();
   return { program, handlers, stdout, stderr };
@@ -34,15 +63,29 @@ describe("CLI protocol", () => {
       port: 25565,
       username: "AgentBot",
       auth: "offline",
-      detach: false,
     });
     expect(JSON.parse(stdout.value)).toEqual({ ok: true, data: { session: "default" } });
+  });
+
+  it("accepts deprecated detach flag without adding it to handler input", async () => {
+    const { program, handlers } = makeProgram();
+    vi.spyOn(handlers, "startSession").mockResolvedValue({ session: "default" });
+
+    await program.parseAsync(["node", "mc-agent", "session", "start", "--detach"]);
+
+    expect(handlers.startSession).toHaveBeenCalledWith({
+      session: "default",
+      host: "localhost",
+      port: 25565,
+      username: "AgentBot",
+      auth: "offline",
+    });
   });
 
   it("uses default text formatter fallback for start sessions without names", async () => {
     const stdout = new MemoryStream();
     const stderr = new MemoryStream();
-    const handlers = createPlaceholderHandlers();
+    const handlers = createMockHandlers();
     const program = buildProgram(handlers, { stdout, stderr, isStdoutTty: true });
     program.exitOverride();
     vi.spyOn(handlers, "startSession").mockResolvedValue({});
@@ -238,7 +281,6 @@ describe("CLI protocol", () => {
       port: 25565,
       username: "AgentBot",
       auth: "offline",
-      detach: false,
       controlPort: 4567,
     });
   });
@@ -276,7 +318,7 @@ describe("CLI protocol", () => {
   it("writes text output and text errors for tty-style commands", async () => {
     const stdout = new MemoryStream();
     const stderr = new MemoryStream();
-    const handlers = createPlaceholderHandlers();
+    const handlers = createMockHandlers();
     const program = buildProgram(handlers, { stdout, stderr, isStdoutTty: true });
     program.exitOverride();
     vi.spyOn(handlers, "startSession").mockResolvedValue({ session: "named" });

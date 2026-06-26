@@ -1,5 +1,5 @@
 import { Writable } from "node:stream";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { z } from "zod";
 import { getSkillContent } from "../core/skills.js";
 import { commandBlocked, normalizeError } from "../output/errors.js";
@@ -36,7 +36,6 @@ const startSchema = sessionSchema.extend({
   username: z.string().min(1).default("AgentBot"),
   auth: z.string().min(1).default("offline"),
   version: z.string().min(1).optional(),
-  detach: z.boolean().default(false),
 });
 
 const eventsSchema = sessionSchema.extend({
@@ -346,7 +345,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .option("--username <name>", "bot username", "AgentBot")
     .option("--auth <mode>", "mineflayer auth mode", "offline")
     .option("--version <version>", "Minecraft protocol version")
-    .option("--detach", "keep the session daemon running in the background", false)
+    .addOption(new Option("--detach", "deprecated; sessions always run in the background").hideHelp())
     .action((opts, cmd) =>
       commandRunner(
         cmd,

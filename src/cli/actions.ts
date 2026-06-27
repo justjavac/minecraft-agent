@@ -402,85 +402,6 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
       return daemonRequest(record, "/world/elytra-fly", { method: "POST", body: "{}" });
     },
 
-    async buildPlaceLine(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/build/place-line", {
-        method: "POST",
-        body: JSON.stringify({
-          from: { x: input.fromX, y: input.fromY, z: input.fromZ },
-          to: { x: input.toX, y: input.toY, z: input.toZ },
-          face: input.face,
-          item: input.item,
-          maxBlocks: input.maxBlocks,
-        }),
-      });
-    },
-
-    async buildPlaceCuboidShell(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/build/place-cuboid-shell", {
-        method: "POST",
-        body: JSON.stringify({
-          from: { x: input.fromX, y: input.fromY, z: input.fromZ },
-          to: { x: input.toX, y: input.toY, z: input.toZ },
-          face: input.face,
-          item: input.item,
-          maxBlocks: input.maxBlocks,
-        }),
-      });
-    },
-
-    async mineDigLine(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/mine/dig-line", {
-        method: "POST",
-        body: JSON.stringify({
-          from: { x: input.fromX, y: input.fromY, z: input.fromZ },
-          to: { x: input.toX, y: input.toY, z: input.toZ },
-          maxBlocks: input.maxBlocks,
-        }),
-      });
-    },
-
-    async mineDigCuboid(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/mine/dig-cuboid", {
-        method: "POST",
-        body: JSON.stringify({
-          from: { x: input.fromX, y: input.fromY, z: input.fromZ },
-          to: { x: input.toX, y: input.toY, z: input.toZ },
-          shell: input.shell,
-          maxBlocks: input.maxBlocks,
-        }),
-      });
-    },
-
-    async cropInspect(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, `/crop/inspect?x=${input.x}&y=${input.y}&z=${input.z}`);
-    },
-
-    async cropPlant(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/crop/plant", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z, item: input.item }),
-      });
-    },
-
-    async cropHarvest(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/crop/harvest", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z, onlyMature: input.onlyMature, replantItem: input.replantItem }),
-      });
-    },
-
-    async cropFindMature(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, `/crop/find-mature?name=${encodeURIComponent(input.name)}&radius=${input.radius}&count=${input.count}`);
-    },
-
     async windowOpenBlock(input) {
       const record = await loadSessionForClient(input.session);
       return daemonRequest(record, "/window/open-block", {
@@ -518,159 +439,17 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
       });
     },
 
+    async windowClick(input) {
+      const record = await loadSessionForClient(input.session);
+      return daemonRequest(record, "/window/click", {
+        method: "POST",
+        body: JSON.stringify({ slot: input.slot, mouseButton: input.mouseButton, mode: input.mode }),
+      });
+    },
+
     async windowClose(input) {
       const record = await loadSessionForClient(input.session);
       return daemonRequest(record, "/window/close", { method: "POST", body: "{}" });
-    },
-
-    async chestOpenBlock(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/open-block", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z }),
-      });
-    },
-
-    async chestOpenEntity(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/open-entity", {
-        method: "POST",
-        body: JSON.stringify({ id: input.id }),
-      });
-    },
-
-    async chestStatus(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/status");
-    },
-
-    async chestDeposit(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/deposit", {
-        method: "POST",
-        body: JSON.stringify({ item: input.item, count: input.count }),
-      });
-    },
-
-    async chestWithdraw(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/withdraw", {
-        method: "POST",
-        body: JSON.stringify({ item: input.item, count: input.count }),
-      });
-    },
-
-    async chestClose(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/chest/close", { method: "POST", body: "{}" });
-    },
-
-    async furnaceOpen(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/open", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z }),
-      });
-    },
-
-    async furnaceStatus(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/status");
-    },
-
-    async furnacePutInput(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/put-input", {
-        method: "POST",
-        body: JSON.stringify({ item: input.item, count: input.count }),
-      });
-    },
-
-    async furnacePutFuel(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/put-fuel", {
-        method: "POST",
-        body: JSON.stringify({ item: input.item, count: input.count }),
-      });
-    },
-
-    async furnaceTakeInput(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/take-input", { method: "POST", body: "{}" });
-    },
-
-    async furnaceTakeFuel(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/take-fuel", { method: "POST", body: "{}" });
-    },
-
-    async furnaceTakeOutput(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/furnace/take-output", { method: "POST", body: "{}" });
-    },
-
-    async anvilRename(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/anvil/rename", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z, item: input.item, name: input.name }),
-      });
-    },
-
-    async anvilCombine(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/anvil/combine", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z, firstItem: input.firstItem, secondItem: input.secondItem, name: input.name }),
-      });
-    },
-
-    async enchantOpen(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/open", {
-        method: "POST",
-        body: JSON.stringify({ x: input.x, y: input.y, z: input.z }),
-      });
-    },
-
-    async enchantStatus(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/status");
-    },
-
-    async enchantPutTarget(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/put-target", { method: "POST", body: JSON.stringify({ item: input.item }) });
-    },
-
-    async enchantPutLapis(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/put-lapis", { method: "POST", body: JSON.stringify({ item: input.item }) });
-    },
-
-    async enchant(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/enchant", { method: "POST", body: JSON.stringify({ choice: input.choice }) });
-    },
-
-    async enchantTakeTarget(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/enchant/take-target", { method: "POST", body: "{}" });
-    },
-
-    async villagerOpen(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/villager/open", { method: "POST", body: JSON.stringify({ id: input.id }) });
-    },
-
-    async villagerStatus(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/villager/status");
-    },
-
-    async villagerTrade(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/villager/trade", { method: "POST", body: JSON.stringify({ index: input.index, times: input.times }) });
     },
 
     async entityActivate(input) {
@@ -727,33 +506,6 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
       return daemonRequest(record, "/entity/move-vehicle", {
         method: "POST",
         body: JSON.stringify({ left: input.left, forward: input.forward }),
-      });
-    },
-
-    async combatTargets(input) {
-      const record = await loadSessionForClient(input.session);
-      const params = new URLSearchParams({
-        radius: String(input.radius),
-        limit: String(input.limit),
-        includePlayers: String(input.includePlayers),
-        includePassive: String(input.includePassive),
-      });
-      if (input.name) params.set("name", input.name);
-      if (input.type) params.set("type", input.type);
-      return daemonRequest(record, `/combat/targets?${params.toString()}`);
-    },
-
-    async combatAttackNearest(input) {
-      const record = await loadSessionForClient(input.session);
-      return daemonRequest(record, "/combat/attack-nearest", {
-        method: "POST",
-        body: JSON.stringify({
-          name: input.name,
-          type: input.type,
-          radius: input.radius,
-          allowPlayers: input.allowPlayers,
-          allowPassive: input.allowPassive,
-        }),
       });
     },
 

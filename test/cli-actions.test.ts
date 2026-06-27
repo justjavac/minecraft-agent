@@ -134,42 +134,13 @@ describe("CLI actions", () => {
     await handlers.worldSleep({ session: "default", x: 1, y: 2, z: 3 });
     await handlers.worldWake({ session: "default" });
     await handlers.worldElytraFly({ session: "default" });
-    await handlers.buildPlaceLine({ session: "default", fromX: 1, fromY: 2, fromZ: 3, toX: 3, toY: 2, toZ: 3, face: "up", item: "dirt", maxBlocks: 10 });
-    await handlers.buildPlaceCuboidShell({ session: "default", fromX: 1, fromY: 2, fromZ: 3, toX: 2, toY: 3, toZ: 4, face: "up", item: "dirt", maxBlocks: 20 });
-    await handlers.mineDigLine({ session: "default", fromX: 1, fromY: 2, fromZ: 3, toX: 1, toY: 4, toZ: 3, maxBlocks: 10 });
-    await handlers.mineDigCuboid({ session: "default", fromX: 1, fromY: 2, fromZ: 3, toX: 2, toY: 3, toZ: 4, shell: false, maxBlocks: 20 });
-    await handlers.cropInspect({ session: "default", x: 1, y: 2, z: 3 });
-    await handlers.cropPlant({ session: "default", x: 1, y: 2, z: 3, item: "wheat_seeds" });
-    await handlers.cropHarvest({ session: "default", x: 1, y: 3, z: 3, onlyMature: true, replantItem: "wheat_seeds" });
-    await handlers.cropFindMature({ session: "default", name: "wheat", radius: 16, count: 5 });
     await handlers.windowOpenBlock({ session: "default", x: 1, y: 2, z: 3 });
     await handlers.windowOpenEntity({ session: "default", id: 10 });
     await handlers.windowStatus({ session: "default" });
     await handlers.windowDeposit({ session: "default", item: "dirt", count: 1 });
     await handlers.windowWithdraw({ session: "default", item: "dirt", count: 1 });
+    await handlers.windowClick({ session: "default", slot: 5, mouseButton: 0, mode: 0 });
     await handlers.windowClose({ session: "default" });
-    await handlers.chestOpenBlock({ session: "default", x: 1, y: 2, z: 3 });
-    await handlers.chestOpenEntity({ session: "default", id: 10 });
-    await handlers.chestStatus({ session: "default" });
-    await handlers.chestDeposit({ session: "default", item: "dirt", count: 1 });
-    await handlers.chestWithdraw({ session: "default", item: "dirt", count: 1 });
-    await handlers.chestClose({ session: "default" });
-    await handlers.furnaceOpen({ session: "default", x: 1, y: 2, z: 3 });
-    await handlers.furnaceStatus({ session: "default" });
-    await handlers.furnacePutInput({ session: "default", item: "dirt", count: 1 });
-    await handlers.furnacePutFuel({ session: "default", item: "coal", count: 1 });
-    await handlers.furnaceTakeOutput({ session: "default" });
-    await handlers.anvilRename({ session: "default", x: 1, y: 2, z: 3, item: "iron_sword", name: "Sharp" });
-    await handlers.anvilCombine({ session: "default", x: 1, y: 2, z: 3, firstItem: "iron_sword", secondItem: "enchanted_book", name: "Sharper" });
-    await handlers.enchantOpen({ session: "default", x: 1, y: 2, z: 3 });
-    await handlers.enchantStatus({ session: "default" });
-    await handlers.enchantPutTarget({ session: "default", item: "iron_sword" });
-    await handlers.enchantPutLapis({ session: "default", item: "lapis_lazuli" });
-    await handlers.enchant({ session: "default", choice: 0 });
-    await handlers.enchantTakeTarget({ session: "default" });
-    await handlers.villagerOpen({ session: "default", id: 10 });
-    await handlers.villagerStatus({ session: "default" });
-    await handlers.villagerTrade({ session: "default", index: 0, times: 1 });
     await handlers.entityFind({ session: "default", name: "zombie", radius: 16, limit: 5, includePlayers: false, includePassive: false });
     await handlers.entityActivate({ session: "default", id: 10 });
     await handlers.entityUseOn({ session: "default", id: 10 });
@@ -178,9 +149,6 @@ describe("CLI actions", () => {
     await handlers.entityMount({ session: "default", id: 10 });
     await handlers.entityDismount({ session: "default" });
     await handlers.entityMoveVehicle({ session: "default", left: 0.5, forward: 1 });
-    await handlers.combatTargets({ session: "default", type: "mob", radius: 16, limit: 5, includePlayers: false, includePassive: false });
-    await handlers.combatAttackNearest({ session: "default", name: "zombie", radius: 16, allowPlayers: false, allowPassive: false });
-
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/status");
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/stop", { method: "POST", body: "{}" });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/events?since=3&limit=10");
@@ -304,15 +272,6 @@ describe("CLI actions", () => {
     });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/world/wake", { method: "POST", body: "{}" });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/world/elytra-fly", { method: "POST", body: "{}" });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/build/place-line", {
-      method: "POST",
-      body: JSON.stringify({ from: { x: 1, y: 2, z: 3 }, to: { x: 3, y: 2, z: 3 }, face: "up", item: "dirt", maxBlocks: 10 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/mine/dig-cuboid", {
-      method: "POST",
-      body: JSON.stringify({ from: { x: 1, y: 2, z: 3 }, to: { x: 2, y: 3, z: 4 }, shell: false, maxBlocks: 20 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/crop/find-mature?name=wheat&radius=16&count=5");
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/window/open-block", {
       method: "POST",
       body: JSON.stringify({ x: 1, y: 2, z: 3 }),
@@ -330,27 +289,11 @@ describe("CLI actions", () => {
       method: "POST",
       body: JSON.stringify({ item: "dirt", count: 1 }),
     });
+    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/window/click", {
+      method: "POST",
+      body: JSON.stringify({ slot: 5, mouseButton: 0, mode: 0 }),
+    });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/window/close", { method: "POST", body: "{}" });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/chest/open-block", {
-      method: "POST",
-      body: JSON.stringify({ x: 1, y: 2, z: 3 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/furnace/put-fuel", {
-      method: "POST",
-      body: JSON.stringify({ item: "coal", count: 1 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/anvil/rename", {
-      method: "POST",
-      body: JSON.stringify({ x: 1, y: 2, z: 3, item: "iron_sword", name: "Sharp" }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/enchant/enchant", {
-      method: "POST",
-      body: JSON.stringify({ choice: 0 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/villager/trade", {
-      method: "POST",
-      body: JSON.stringify({ index: 0, times: 1 }),
-    });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/entity/find?radius=16&limit=5&includePlayers=false&includePassive=false&name=zombie");
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/entity/activate", { method: "POST", body: JSON.stringify({ id: 10 }) });
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/entity/use-on", { method: "POST", body: JSON.stringify({ id: 10 }) });
@@ -367,11 +310,6 @@ describe("CLI actions", () => {
     expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/entity/move-vehicle", {
       method: "POST",
       body: JSON.stringify({ left: 0.5, forward: 1 }),
-    });
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/combat/targets?radius=16&limit=5&includePlayers=false&includePassive=false&type=mob");
-    expect(mocks.daemonRequest).toHaveBeenCalledWith(record, "/combat/attack-nearest", {
-      method: "POST",
-      body: JSON.stringify({ name: "zombie", type: undefined, radius: 16, allowPlayers: false, allowPassive: false }),
     });
   });
 

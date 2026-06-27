@@ -206,63 +206,10 @@ const windowItemSchema = sessionSchema.extend({
   count: z.coerce.number().int().positive().max(2304).default(1),
 });
 
-const blockRangeSchema = sessionSchema.extend({
-  fromX: z.coerce.number(),
-  fromY: z.coerce.number(),
-  fromZ: z.coerce.number(),
-  toX: z.coerce.number(),
-  toY: z.coerce.number(),
-  toZ: z.coerce.number(),
-  maxBlocks: z.coerce.number().int().positive().max(4096).default(128),
-});
-
-const buildPlaceRangeSchema = blockRangeSchema.extend({
-  face: z.enum(["up", "down", "north", "south", "west", "east"]).default("up"),
-  item: z.string().min(1).optional(),
-});
-
-const mineCuboidSchema = blockRangeSchema.extend({
-  shell: z.boolean().default(false),
-});
-
-const cropPlantSchema = blockPositionSchema.extend({
-  item: z.string().min(1),
-});
-
-const cropHarvestSchema = blockPositionSchema.extend({
-  onlyMature: z.boolean().default(true),
-  force: z.boolean().default(false),
-  replantItem: z.string().min(1).optional(),
-});
-
-const cropFindMatureSchema = sessionSchema.extend({
-  name: z.string().min(1),
-  radius: z.coerce.number().positive().max(256).default(32),
-  count: z.coerce.number().int().min(1).max(200).default(10),
-});
-
-const anvilRenameSchema = blockPositionSchema.extend({
-  item: z.string().min(1),
-  name: z.string().min(1),
-});
-
-const anvilCombineSchema = blockPositionSchema.extend({
-  firstItem: z.string().min(1),
-  secondItem: z.string().min(1),
-  name: z.string().min(1).optional(),
-});
-
-const itemNameSchema = sessionSchema.extend({
-  item: z.string().min(1),
-});
-
-const enchantChoiceSchema = sessionSchema.extend({
-  choice: z.union([z.coerce.number().int().min(0), z.string().min(1)]).default(0),
-});
-
-const villagerTradeSchema = sessionSchema.extend({
-  index: z.coerce.number().int().min(0),
-  times: z.coerce.number().int().positive().max(64).default(1),
+const windowClickSchema = sessionSchema.extend({
+  slot: z.coerce.number().int().min(0),
+  mouseButton: z.coerce.number().int().min(0).max(1).default(0),
+  mode: z.coerce.number().int().min(0).max(6).default(0),
 });
 
 const entityFindSchema = sessionSchema.extend({
@@ -275,14 +222,6 @@ const entityFindSchema = sessionSchema.extend({
 });
 
 const entityAttackSchema = entitySchema.extend({
-  allowPlayers: z.boolean().default(false),
-  allowPassive: z.boolean().default(false),
-});
-
-const combatAttackNearestSchema = sessionSchema.extend({
-  name: z.string().min(1).optional(),
-  type: z.string().min(1).optional(),
-  radius: z.coerce.number().positive().max(256).default(32),
   allowPlayers: z.boolean().default(false),
   allowPassive: z.boolean().default(false),
 });
@@ -806,111 +745,6 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .option("--session <name>", "session name", "default")
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.worldElytraFly(sessionSchema.parse(opts)))());
 
-  const build = program.command("build").description("Place deterministic multi-block shapes");
-
-  build
-    .command("place-line")
-    .description("Place against an axis-aligned line of reference blocks")
-    .requiredOption("--from-x <number>", "start x coordinate")
-    .requiredOption("--from-y <number>", "start y coordinate")
-    .requiredOption("--from-z <number>", "start z coordinate")
-    .requiredOption("--to-x <number>", "end x coordinate")
-    .requiredOption("--to-y <number>", "end y coordinate")
-    .requiredOption("--to-z <number>", "end z coordinate")
-    .option("--face <face>", "up|down|north|south|west|east", "up")
-    .option("--item <name>", "inventory item to equip before placing")
-    .option("--max-blocks <count>", "maximum blocks to affect", "128")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.buildPlaceLine(buildPlaceRangeSchema.parse(opts)))());
-
-  build
-    .command("place-cuboid-shell")
-    .description("Place against the shell of a cuboid of reference blocks")
-    .requiredOption("--from-x <number>", "corner x coordinate")
-    .requiredOption("--from-y <number>", "corner y coordinate")
-    .requiredOption("--from-z <number>", "corner z coordinate")
-    .requiredOption("--to-x <number>", "opposite corner x coordinate")
-    .requiredOption("--to-y <number>", "opposite corner y coordinate")
-    .requiredOption("--to-z <number>", "opposite corner z coordinate")
-    .option("--face <face>", "up|down|north|south|west|east", "up")
-    .option("--item <name>", "inventory item to equip before placing")
-    .option("--max-blocks <count>", "maximum blocks to affect", "512")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.buildPlaceCuboidShell(buildPlaceRangeSchema.parse(opts)))());
-
-  const mine = program.command("mine").description("Dig deterministic multi-block shapes");
-
-  mine
-    .command("dig-line")
-    .description("Dig an axis-aligned line of loaded blocks")
-    .requiredOption("--from-x <number>", "start x coordinate")
-    .requiredOption("--from-y <number>", "start y coordinate")
-    .requiredOption("--from-z <number>", "start z coordinate")
-    .requiredOption("--to-x <number>", "end x coordinate")
-    .requiredOption("--to-y <number>", "end y coordinate")
-    .requiredOption("--to-z <number>", "end z coordinate")
-    .option("--max-blocks <count>", "maximum blocks to affect", "128")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.mineDigLine(blockRangeSchema.parse(opts)))());
-
-  mine
-    .command("dig-cuboid")
-    .description("Dig a cuboid of loaded blocks")
-    .requiredOption("--from-x <number>", "corner x coordinate")
-    .requiredOption("--from-y <number>", "corner y coordinate")
-    .requiredOption("--from-z <number>", "corner z coordinate")
-    .requiredOption("--to-x <number>", "opposite corner x coordinate")
-    .requiredOption("--to-y <number>", "opposite corner y coordinate")
-    .requiredOption("--to-z <number>", "opposite corner z coordinate")
-    .option("--shell", "dig only the cuboid shell", false)
-    .option("--max-blocks <count>", "maximum blocks to affect", "512")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.mineDigCuboid(mineCuboidSchema.parse(opts)))());
-
-  const crop = program.command("crop").description("Inspect, plant, and harvest crops");
-
-  crop
-    .command("inspect")
-    .description("Inspect crop age and maturity at a loaded block")
-    .requiredOption("--x <number>", "crop x coordinate")
-    .requiredOption("--y <number>", "crop y coordinate")
-    .requiredOption("--z <number>", "crop z coordinate")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.cropInspect(blockPositionSchema.parse(opts)))());
-
-  crop
-    .command("find-mature")
-    .description("Find mature crop blocks by registry name")
-    .requiredOption("--name <name>", "crop block name, for example wheat")
-    .option("--radius <blocks>", "search radius", "32")
-    .option("--count <count>", "maximum crops to return", "10")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.cropFindMature(cropFindMatureSchema.parse(opts)))());
-
-  crop
-    .command("plant")
-    .description("Plant the held or named seed against a farmland block")
-    .requiredOption("--x <number>", "farmland x coordinate")
-    .requiredOption("--y <number>", "farmland y coordinate")
-    .requiredOption("--z <number>", "farmland z coordinate")
-    .requiredOption("--item <name>", "seed or crop item name")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.cropPlant(cropPlantSchema.parse(opts)))());
-
-  crop
-    .command("harvest")
-    .description("Harvest a crop block, optionally replanting after dig")
-    .requiredOption("--x <number>", "crop x coordinate")
-    .requiredOption("--y <number>", "crop y coordinate")
-    .requiredOption("--z <number>", "crop z coordinate")
-    .option("--force", "harvest even when maturity is unknown or false", false)
-    .option("--replant-item <name>", "seed item to plant on the block below after harvest")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => {
-      const parsed = cropHarvestSchema.parse(opts);
-      return commandRunner(cmd, io, () => handlers.cropHarvest({ ...parsed, onlyMature: !parsed.force }))();
-    });
-
   const window = program.command("window").description("Inspect and transfer through the current container window");
 
   window
@@ -952,143 +786,19 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.windowWithdraw(windowItemSchema.parse(opts)))());
 
   window
+    .command("click")
+    .description("Click a raw window slot")
+    .requiredOption("--slot <slot>", "window slot")
+    .option("--mouse-button <button>", "mouse button", "0")
+    .option("--mode <mode>", "click mode", "0")
+    .option("--session <name>", "session name", "default")
+    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.windowClick(windowClickSchema.parse(opts)))());
+
+  window
     .command("close")
     .description("Close the current window")
     .option("--session <name>", "session name", "default")
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.windowClose(sessionSchema.parse(opts)))());
-
-  const chest = program.command("chest").description("Open and transfer through chest-like windows");
-
-  chest
-    .command("open-block")
-    .description("Open a chest-like block with mineflayer openChest")
-    .requiredOption("--x <number>", "block x coordinate")
-    .requiredOption("--y <number>", "block y coordinate")
-    .requiredOption("--z <number>", "block z coordinate")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestOpenBlock(blockPositionSchema.parse(opts)))());
-
-  chest
-    .command("open-entity")
-    .description("Open a chest-like entity with mineflayer openChest")
-    .requiredOption("--id <id>", "entity id")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestOpenEntity(entitySchema.parse(opts)))());
-
-  chest
-    .command("status")
-    .description("Show the current chest-like window")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestStatus(sessionSchema.parse(opts)))());
-
-  chest
-    .command("deposit")
-    .description("Deposit inventory items into the current chest")
-    .requiredOption("--item <name>", "item name")
-    .option("--count <count>", "item count", "1")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestDeposit(windowItemSchema.parse(opts)))());
-
-  chest
-    .command("withdraw")
-    .description("Withdraw items from the current chest")
-    .requiredOption("--item <name>", "item name")
-    .option("--count <count>", "item count", "1")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestWithdraw(windowItemSchema.parse(opts)))());
-
-  chest
-    .command("close")
-    .description("Close the current chest")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.chestClose(sessionSchema.parse(opts)))());
-
-  const furnace = program.command("furnace").description("Operate furnace windows");
-
-  furnace
-    .command("open")
-    .description("Open a furnace block")
-    .requiredOption("--x <number>", "furnace x coordinate")
-    .requiredOption("--y <number>", "furnace y coordinate")
-    .requiredOption("--z <number>", "furnace z coordinate")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnaceOpen(blockPositionSchema.parse(opts)))());
-
-  furnace.command("status").description("Show furnace progress and slots").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnaceStatus(sessionSchema.parse(opts)))());
-
-  furnace
-    .command("put-input")
-    .description("Put an inventory item into the furnace input slot")
-    .requiredOption("--item <name>", "item name")
-    .option("--count <count>", "item count", "1")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnacePutInput(windowItemSchema.parse(opts)))());
-
-  furnace
-    .command("put-fuel")
-    .description("Put an inventory item into the furnace fuel slot")
-    .requiredOption("--item <name>", "item name")
-    .option("--count <count>", "item count", "1")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnacePutFuel(windowItemSchema.parse(opts)))());
-
-  furnace.command("take-input").description("Take the furnace input slot").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnaceTakeInput(sessionSchema.parse(opts)))());
-  furnace.command("take-fuel").description("Take the furnace fuel slot").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnaceTakeFuel(sessionSchema.parse(opts)))());
-  furnace.command("take-output").description("Take the furnace output slot").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.furnaceTakeOutput(sessionSchema.parse(opts)))());
-
-  const anvil = program.command("anvil").description("Operate an anvil block");
-
-  anvil
-    .command("rename")
-    .description("Rename an inventory item at an anvil")
-    .requiredOption("--x <number>", "anvil x coordinate")
-    .requiredOption("--y <number>", "anvil y coordinate")
-    .requiredOption("--z <number>", "anvil z coordinate")
-    .requiredOption("--item <name>", "inventory item name")
-    .requiredOption("--name <text>", "new item name")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.anvilRename(anvilRenameSchema.parse(opts)))());
-
-  anvil
-    .command("combine")
-    .description("Combine two inventory items at an anvil")
-    .requiredOption("--x <number>", "anvil x coordinate")
-    .requiredOption("--y <number>", "anvil y coordinate")
-    .requiredOption("--z <number>", "anvil z coordinate")
-    .requiredOption("--first-item <name>", "first inventory item name")
-    .requiredOption("--second-item <name>", "second inventory item name")
-    .option("--name <text>", "optional result name")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.anvilCombine(anvilCombineSchema.parse(opts)))());
-
-  const enchant = program.command("enchant").description("Operate enchantment table windows");
-
-  enchant
-    .command("open")
-    .description("Open an enchantment table block")
-    .requiredOption("--x <number>", "table x coordinate")
-    .requiredOption("--y <number>", "table y coordinate")
-    .requiredOption("--z <number>", "table z coordinate")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchantOpen(blockPositionSchema.parse(opts)))());
-
-  enchant.command("status").description("Show enchantment choices and slots").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchantStatus(sessionSchema.parse(opts)))());
-  enchant.command("put-target").description("Put an inventory item into the target slot").requiredOption("--item <name>", "item name").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchantPutTarget(itemNameSchema.parse(opts)))());
-  enchant.command("put-lapis").description("Put lapis into the lapis slot").requiredOption("--item <name>", "lapis item name").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchantPutLapis(itemNameSchema.parse(opts)))());
-  enchant.command("enchant").description("Apply an enchantment choice").option("--choice <indexOrId>", "choice index or id", "0").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchant(enchantChoiceSchema.parse(opts)))());
-  enchant.command("take-target").description("Take the target item from the table").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.enchantTakeTarget(sessionSchema.parse(opts)))());
-
-  const villager = program.command("villager").description("Open and trade with villager windows");
-
-  villager
-    .command("open")
-    .description("Open a visible villager by entity id")
-    .requiredOption("--id <id>", "villager entity id")
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.villagerOpen(entitySchema.parse(opts)))());
-
-  villager.command("status").description("Show villager trades").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.villagerStatus(sessionSchema.parse(opts)))());
-  villager.command("trade").description("Execute a villager trade by index").requiredOption("--index <index>", "trade index").option("--times <count>", "number of times", "1").option("--session <name>", "session name", "default").action((opts, cmd) => commandRunner(cmd, io, () => handlers.villagerTrade(villagerTradeSchema.parse(opts)))());
 
   const entity = program.command("entity").description("Interact with visible entities");
 
@@ -1155,31 +865,6 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .option("--forward <number>", "forward/back input from -1 to 1", "0")
     .option("--session <name>", "session name", "default")
     .action((opts, cmd) => commandRunner(cmd, io, () => handlers.entityMoveVehicle(moveVehicleSchema.parse(opts)))());
-
-  const combat = program.command("combat").description("Find and attack combat targets with guardrails");
-
-  combat
-    .command("targets")
-    .description("List attackable target candidates")
-    .option("--name <name>", "entity name or username")
-    .option("--type <type>", "entity type")
-    .option("--radius <blocks>", "search radius", "32")
-    .option("--limit <count>", "maximum targets to return", "20")
-    .option("--include-players", "include player entities", false)
-    .option("--include-passive", "include passive mobs", false)
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.combatTargets(entityFindSchema.parse(opts)))());
-
-  combat
-    .command("attack-nearest")
-    .description("Attack the nearest matching target")
-    .option("--name <name>", "entity name or username")
-    .option("--type <type>", "entity type")
-    .option("--radius <blocks>", "search radius", "32")
-    .option("--allow-players", "allow attacking player entities", false)
-    .option("--allow-passive", "allow attacking passive mobs", false)
-    .option("--session <name>", "session name", "default")
-    .action((opts, cmd) => commandRunner(cmd, io, () => handlers.combatAttackNearest(combatAttackNearestSchema.parse(opts)))());
 
   const skills = program.command("skills").description("Print mc-agent skill content for AI agents");
 

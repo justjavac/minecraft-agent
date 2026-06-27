@@ -410,50 +410,6 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
         return;
       }
 
-      if (request.method === "POST" && url.pathname === "/build/place-line") {
-        const body = (await readJson(request)) as {
-          from?: { x: number; y: number; z: number };
-          to?: { x: number; y: number; z: number };
-          face?: string;
-          item?: string;
-          maxBlocks?: number;
-        };
-        sendJson(
-          response,
-          200,
-          await controller.placeLine({
-            from: body.from ?? { x: 0, y: 0, z: 0 },
-            to: body.to ?? { x: 0, y: 0, z: 0 },
-            face: String(body.face ?? "up"),
-            item: body.item,
-            maxBlocks: Number(body.maxBlocks ?? 128),
-          }),
-        );
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/build/place-cuboid-shell") {
-        const body = (await readJson(request)) as {
-          from?: { x: number; y: number; z: number };
-          to?: { x: number; y: number; z: number };
-          face?: string;
-          item?: string;
-          maxBlocks?: number;
-        };
-        sendJson(
-          response,
-          200,
-          await controller.placeCuboidShell({
-            from: body.from ?? { x: 0, y: 0, z: 0 },
-            to: body.to ?? { x: 0, y: 0, z: 0 },
-            face: String(body.face ?? "up"),
-            item: body.item,
-            maxBlocks: Number(body.maxBlocks ?? 512),
-          }),
-        );
-        return;
-      }
-
       if (request.method === "POST" && url.pathname === "/world/activate") {
         const body = (await readJson(request)) as { x?: number; y?: number; z?: number };
         sendJson(response, 200, await controller.activate(Number(body.x), Number(body.y), Number(body.z)));
@@ -479,62 +435,6 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
 
       if (request.method === "POST" && url.pathname === "/world/elytra-fly") {
         sendJson(response, 200, await controller.elytraFly());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/mine/dig-line") {
-        const body = (await readJson(request)) as {
-          from?: { x: number; y: number; z: number };
-          to?: { x: number; y: number; z: number };
-          maxBlocks?: number;
-        };
-        sendJson(response, 200, await controller.digLine({ from: body.from ?? { x: 0, y: 0, z: 0 }, to: body.to ?? { x: 0, y: 0, z: 0 }, maxBlocks: Number(body.maxBlocks ?? 128) }));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/mine/dig-cuboid") {
-        const body = (await readJson(request)) as {
-          from?: { x: number; y: number; z: number };
-          to?: { x: number; y: number; z: number };
-          shell?: boolean;
-          maxBlocks?: number;
-        };
-        sendJson(
-          response,
-          200,
-          await controller.digCuboid({
-            from: body.from ?? { x: 0, y: 0, z: 0 },
-            to: body.to ?? { x: 0, y: 0, z: 0 },
-            shell: Boolean(body.shell ?? false),
-            maxBlocks: Number(body.maxBlocks ?? 512),
-          }),
-        );
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/crop/inspect") {
-        sendJson(response, 200, controller.inspectCrop(Number(url.searchParams.get("x")), Number(url.searchParams.get("y")), Number(url.searchParams.get("z"))));
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/crop/find-mature") {
-        sendJson(
-          response,
-          200,
-          controller.findMatureCrops(String(url.searchParams.get("name") ?? ""), Number(url.searchParams.get("radius") ?? "32"), Number(url.searchParams.get("count") ?? "10")),
-        );
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/crop/plant") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number; item?: string };
-        sendJson(response, 200, await controller.plantCrop(Number(body.x), Number(body.y), Number(body.z), String(body.item ?? "")));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/crop/harvest") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number; onlyMature?: boolean; replantItem?: string };
-        sendJson(response, 200, await controller.harvestCrop(Number(body.x), Number(body.y), Number(body.z), Boolean(body.onlyMature ?? true), body.replantItem));
         return;
       }
 
@@ -567,147 +467,14 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
         return;
       }
 
+      if (request.method === "POST" && url.pathname === "/window/click") {
+        const body = (await readJson(request)) as { slot?: number; mouseButton?: number; mode?: number };
+        sendJson(response, 200, await controller.windowClick(Number(body.slot), Number(body.mouseButton ?? 0), Number(body.mode ?? 0)));
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/window/close") {
         sendJson(response, 200, controller.closeWindow());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/chest/open-block") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number };
-        sendJson(response, 200, await controller.openChestAt(Number(body.x), Number(body.y), Number(body.z)));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/chest/open-entity") {
-        const body = (await readJson(request)) as { id?: number };
-        sendJson(response, 200, await controller.openEntityChest(Number(body.id)));
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/chest/status") {
-        sendJson(response, 200, controller.chestStatus());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/chest/deposit") {
-        const body = (await readJson(request)) as { item?: string; count?: number };
-        sendJson(response, 200, await controller.windowDeposit(String(body.item ?? ""), Number(body.count ?? 1)));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/chest/withdraw") {
-        const body = (await readJson(request)) as { item?: string; count?: number };
-        sendJson(response, 200, await controller.windowWithdraw(String(body.item ?? ""), Number(body.count ?? 1)));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/chest/close") {
-        sendJson(response, 200, controller.closeWindow());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/open") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number };
-        sendJson(response, 200, await controller.openFurnaceAt(Number(body.x), Number(body.y), Number(body.z)));
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/furnace/status") {
-        sendJson(response, 200, controller.furnaceStatus());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/put-input") {
-        const body = (await readJson(request)) as { item?: string; count?: number };
-        sendJson(response, 200, await controller.furnacePutInput(String(body.item ?? ""), Number(body.count ?? 1)));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/put-fuel") {
-        const body = (await readJson(request)) as { item?: string; count?: number };
-        sendJson(response, 200, await controller.furnacePutFuel(String(body.item ?? ""), Number(body.count ?? 1)));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/take-input") {
-        sendJson(response, 200, await controller.furnaceTake("input"));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/take-fuel") {
-        sendJson(response, 200, await controller.furnaceTake("fuel"));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/furnace/take-output") {
-        sendJson(response, 200, await controller.furnaceTake("output"));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/anvil/rename") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number; item?: string; name?: string };
-        sendJson(response, 200, await controller.anvilRename(Number(body.x), Number(body.y), Number(body.z), String(body.item ?? ""), String(body.name ?? "")));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/anvil/combine") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number; firstItem?: string; secondItem?: string; name?: string };
-        sendJson(
-          response,
-          200,
-          await controller.anvilCombine(Number(body.x), Number(body.y), Number(body.z), String(body.firstItem ?? ""), String(body.secondItem ?? ""), body.name),
-        );
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/enchant/open") {
-        const body = (await readJson(request)) as { x?: number; y?: number; z?: number };
-        sendJson(response, 200, await controller.openEnchantmentAt(Number(body.x), Number(body.y), Number(body.z)));
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/enchant/status") {
-        sendJson(response, 200, controller.enchantmentStatus());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/enchant/put-target") {
-        const body = (await readJson(request)) as { item?: string };
-        sendJson(response, 200, await controller.enchantmentPutTarget(String(body.item ?? "")));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/enchant/put-lapis") {
-        const body = (await readJson(request)) as { item?: string };
-        sendJson(response, 200, await controller.enchantmentPutLapis(String(body.item ?? "")));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/enchant/enchant") {
-        const body = (await readJson(request)) as { choice?: string | number };
-        sendJson(response, 200, await controller.enchant(body.choice ?? 0));
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/enchant/take-target") {
-        sendJson(response, 200, await controller.enchantmentTakeTarget());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/villager/open") {
-        const body = (await readJson(request)) as { id?: number };
-        sendJson(response, 200, await controller.openVillagerWindow(Number(body.id)));
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/villager/status") {
-        sendJson(response, 200, controller.villagerStatus());
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/villager/trade") {
-        const body = (await readJson(request)) as { index?: number; times?: number };
-        sendJson(response, 200, await controller.villagerTrade(Number(body.index ?? 0), Number(body.times ?? 1)));
         return;
       }
 
@@ -763,38 +530,6 @@ export async function runDaemon(options: DaemonOptions): Promise<void> {
             limit: Number(url.searchParams.get("limit") ?? "50"),
             includePlayers: url.searchParams.get("includePlayers") === "true",
             includePassive: url.searchParams.get("includePassive") === "true",
-          }),
-        );
-        return;
-      }
-
-      if (request.method === "GET" && url.pathname === "/combat/targets") {
-        sendJson(
-          response,
-          200,
-          controller.findEntities({
-            name: url.searchParams.get("name") ?? undefined,
-            type: url.searchParams.get("type") ?? undefined,
-            radius: Number(url.searchParams.get("radius") ?? "32"),
-            limit: Number(url.searchParams.get("limit") ?? "20"),
-            includePlayers: url.searchParams.get("includePlayers") === "true",
-            includePassive: url.searchParams.get("includePassive") === "true",
-          }),
-        );
-        return;
-      }
-
-      if (request.method === "POST" && url.pathname === "/combat/attack-nearest") {
-        const body = (await readJson(request)) as { name?: string; type?: string; radius?: number; allowPlayers?: boolean; allowPassive?: boolean };
-        sendJson(
-          response,
-          200,
-          controller.attackNearest({
-            name: body.name,
-            type: body.type,
-            radius: Number(body.radius ?? 32),
-            allowPlayers: body.allowPlayers,
-            allowPassive: body.allowPassive,
           }),
         );
         return;

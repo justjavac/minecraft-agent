@@ -21,6 +21,12 @@ class FakeBot extends EventEmitter {
   heldItem = { name: "dirt", displayName: "Dirt" };
   inventory = { items: () => [{ name: "dirt", displayName: "Dirt", count: 2, slot: 36 }] };
   registry = { blocksByName: { dirt: { id: 3 } } };
+  currentWindow = {
+    id: 1,
+    type: "minecraft:chest",
+    containerItems: () => [{ name: "dirt", displayName: "Dirt", count: 2, slot: 0 }],
+    close: vi.fn(),
+  };
   chat = vi.fn();
   quit = vi.fn();
   setControlState = vi.fn();
@@ -31,6 +37,8 @@ class FakeBot extends EventEmitter {
   dig = vi.fn();
   placeBlock = vi.fn();
   activateBlock = vi.fn();
+  openContainer = vi.fn(async () => this.currentWindow);
+  clickWindow = vi.fn();
   pathfinder = {
     setMovements: vi.fn(),
     goto: vi.fn(),
@@ -402,6 +410,21 @@ describe("daemon server", () => {
       body: JSON.stringify({ x: 1, y: 2, z: 3 }),
     });
     expect(fakeBot.activateBlock).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }));
+
+    const opened = await fetch(`http://127.0.0.1:${port}/window/open-block`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ x: 1, y: 2, z: 3 }),
+    });
+    expect(await opened.json()).toMatchObject({ opened: true, window: { id: 1, items: [expect.objectContaining({ name: "dirt" })] } });
+
+    const clicked = await fetch(`http://127.0.0.1:${port}/window/click`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN_C}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ slot: 5, mouseButton: 1, mode: 0 }),
+    });
+    expect(await clicked.json()).toMatchObject({ clicked: true, slot: 5, mouseButton: 1, mode: 0 });
+    expect(fakeBot.clickWindow).toHaveBeenCalledWith(5, 1, 0);
 
     await fetch(`http://127.0.0.1:${port}/stop`, { method: "POST", headers: { Authorization: `Bearer ${TOKEN_C}` } });
   });

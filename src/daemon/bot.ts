@@ -87,13 +87,8 @@ type MineflayerBot = EventEmitter & {
   elytraFly?(): Promise<void>;
   recipesFor?(itemType: number, metadata: number | null, minResultCount: number | null, craftingTable: MineflayerBlock | boolean | null): unknown[];
   craft?(recipe: unknown, count?: number, craftingTable?: MineflayerBlock): Promise<void>;
-  openChest?(chest: MineflayerBlock | MineflayerEntity, direction?: number, cursorPos?: Vec3): Promise<MineflayerWindow>;
-  openFurnace?(furnace: MineflayerBlock): Promise<MineflayerFurnace>;
-  openAnvil?(anvil: MineflayerBlock): Promise<MineflayerAnvil>;
-  openEnchantmentTable?(enchantmentTable: MineflayerBlock): Promise<MineflayerEnchantmentTable>;
-  openVillager?(villager: MineflayerEntity): Promise<MineflayerVillager>;
-  trade?(villagerInstance: MineflayerVillager, tradeIndex: string | number, times?: number): Promise<void>;
   openContainer?(target: MineflayerBlock | MineflayerEntity, direction?: Vec3, cursorPos?: Vec3): Promise<MineflayerWindow>;
+  clickWindow?(slot: number, mouseButton: number, mode: number): Promise<void>;
   closeWindow?(window: MineflayerWindow): void;
   pathfinder?: {
     thinkTimeout?: number;
@@ -137,46 +132,6 @@ type MineflayerWindow = {
   containerItems?(): MineflayerItem[];
   items?(): MineflayerItem[];
 };
-type MineflayerFurnace = MineflayerWindow & {
-  fuel?: number;
-  progress?: number;
-  takeInput?(): Promise<MineflayerItem>;
-  takeFuel?(): Promise<MineflayerItem>;
-  takeOutput?(): Promise<MineflayerItem>;
-  putInput?(itemType: number, metadata: number | null, count: number): Promise<void>;
-  putFuel?(itemType: number, metadata: number | null, count: number): Promise<void>;
-  inputItem?(): MineflayerItem | null;
-  fuelItem?(): MineflayerItem | null;
-  outputItem?(): MineflayerItem | null;
-};
-type MineflayerEnchantment = { level?: number; expected?: unknown };
-type MineflayerEnchantmentTable = MineflayerWindow & {
-  enchantments?: MineflayerEnchantment[];
-  targetItem?(): MineflayerItem | null;
-  enchant?(choice: string | number): Promise<MineflayerItem>;
-  takeTargetItem?(): Promise<MineflayerItem>;
-  putTargetItem?(item: MineflayerItem): Promise<MineflayerItem>;
-  putLapis?(item: MineflayerItem): Promise<MineflayerItem>;
-};
-type MineflayerAnvil = {
-  combine?(itemOne: MineflayerItem, itemTwo: MineflayerItem, name?: string): Promise<void>;
-  rename?(item: MineflayerItem, name?: string): Promise<void>;
-};
-type MineflayerVillagerTrade = {
-  inputItem1?: MineflayerItem;
-  inputItem2?: MineflayerItem | null;
-  outputItem?: MineflayerItem;
-  hasItem2?: boolean;
-  tradeDisabled?: boolean;
-  nbTradeUses?: number;
-  maximumNbTradeUses?: number;
-  xp?: number;
-  specialPrice?: number;
-  priceMultiplier?: number;
-  demand?: number;
-  realPrice?: number;
-};
-type MineflayerVillager = MineflayerWindow & { trades?: MineflayerVillagerTrade[] };
 type NavigationMovementConfig = {
   canDig?: boolean;
   allowSprinting?: boolean;
@@ -220,14 +175,6 @@ const passiveEntityNames = new Set([
   "villager",
   "wandering_trader",
 ]);
-
-const matureAges: Record<string, number> = {
-  beetroots: 3,
-  carrots: 7,
-  nether_wart: 3,
-  potatoes: 7,
-  wheat: 7,
-};
 
 function distance(a?: { x: number; y: number; z: number }, b?: { x: number; y: number; z: number }): number | undefined {
   if (!a || !b) {
@@ -310,56 +257,6 @@ function serializeWindow(window: MineflayerWindow | null | undefined) {
   };
 }
 
-function serializeFurnace(furnace: MineflayerFurnace | null | undefined) {
-  return furnace
-    ? {
-        ...serializeWindow(furnace),
-        fuel: furnace.fuel,
-        progress: furnace.progress,
-        inputItem: serializeItem(furnace.inputItem?.()),
-        fuelItem: serializeItem(furnace.fuelItem?.()),
-        outputItem: serializeItem(furnace.outputItem?.()),
-      }
-    : undefined;
-}
-
-function serializeEnchantmentTable(table: MineflayerEnchantmentTable | null | undefined) {
-  return table
-    ? {
-        ...serializeWindow(table),
-        targetItem: serializeItem(table.targetItem?.()),
-        enchantments: safePlain(table.enchantments ?? []),
-      }
-    : undefined;
-}
-
-function serializeTrade(trade: MineflayerVillagerTrade, index: number) {
-  return {
-    index,
-    inputItem1: serializeItem(trade.inputItem1),
-    inputItem2: serializeItem(trade.inputItem2),
-    outputItem: serializeItem(trade.outputItem),
-    hasItem2: trade.hasItem2,
-    tradeDisabled: trade.tradeDisabled,
-    nbTradeUses: trade.nbTradeUses,
-    maximumNbTradeUses: trade.maximumNbTradeUses,
-    xp: trade.xp,
-    specialPrice: trade.specialPrice,
-    priceMultiplier: trade.priceMultiplier,
-    demand: trade.demand,
-    realPrice: trade.realPrice,
-  };
-}
-
-function serializeVillager(villager: MineflayerVillager | null | undefined) {
-  return villager
-    ? {
-        ...serializeWindow(villager),
-        trades: (villager.trades ?? []).map((trade, index) => serializeTrade(trade, index)),
-      }
-    : undefined;
-}
-
 function faceVector(face: string): Vec3 {
   switch (face) {
     case "down":
@@ -376,37 +273,6 @@ function faceVector(face: string): Vec3 {
     default:
       return new Vec3(0, 1, 0);
   }
-}
-
-function axisAlignedLine(from: Vec3, to: Vec3): Vec3[] {
-  const changed = [from.x !== to.x, from.y !== to.y, from.z !== to.z].filter(Boolean).length;
-  if (changed > 1) {
-    throw new Error("Line commands require an axis-aligned line.");
-  }
-  const step = new Vec3(Math.sign(to.x - from.x), Math.sign(to.y - from.y), Math.sign(to.z - from.z));
-  const length = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y), Math.abs(to.z - from.z));
-  return Array.from({ length: length + 1 }, (_, index) => new Vec3(from.x + step.x * index, from.y + step.y * index, from.z + step.z * index));
-}
-
-function cuboidPositions(from: Vec3, to: Vec3, shellOnly: boolean): Vec3[] {
-  const minX = Math.min(from.x, to.x);
-  const maxX = Math.max(from.x, to.x);
-  const minY = Math.min(from.y, to.y);
-  const maxY = Math.max(from.y, to.y);
-  const minZ = Math.min(from.z, to.z);
-  const maxZ = Math.max(from.z, to.z);
-  const positions: Vec3[] = [];
-  for (let x = minX; x <= maxX; x += 1) {
-    for (let y = minY; y <= maxY; y += 1) {
-      for (let z = minZ; z <= maxZ; z += 1) {
-        const boundary = x === minX || x === maxX || y === minY || y === maxY || z === minZ || z === maxZ;
-        if (!shellOnly || boundary) {
-          positions.push(new Vec3(x, y, z));
-        }
-      }
-    }
-  }
-  return positions;
 }
 
 function recipeStringField(recipe: unknown, field: string): string | undefined {
@@ -917,48 +783,6 @@ export class BotController {
     return { placed: true, referenceBlock: serializeBlock(block), face };
   }
 
-  async placeLine(input: {
-    from: { x: number; y: number; z: number };
-    to: { x: number; y: number; z: number };
-    face: string;
-    item?: string;
-    maxBlocks: number;
-  }) {
-    const positions = axisAlignedLine(new Vec3(input.from.x, input.from.y, input.from.z), new Vec3(input.to.x, input.to.y, input.to.z));
-    this.requireMaxBlocks(positions.length, input.maxBlocks);
-    if (input.item) {
-      await this.equip(input.item, "hand");
-    }
-    const placed = [];
-    for (const position of positions) {
-      const block = this.getRequiredBlock(position.x, position.y, position.z);
-      await this.requireMethod("placeBlock").call(this.requireBot(), block, faceVector(input.face));
-      placed.push(serializePosition(position));
-    }
-    return { placed: placed.length, face: input.face, item: input.item, positions: placed };
-  }
-
-  async placeCuboidShell(input: {
-    from: { x: number; y: number; z: number };
-    to: { x: number; y: number; z: number };
-    face: string;
-    item?: string;
-    maxBlocks: number;
-  }) {
-    const positions = cuboidPositions(new Vec3(input.from.x, input.from.y, input.from.z), new Vec3(input.to.x, input.to.y, input.to.z), true);
-    this.requireMaxBlocks(positions.length, input.maxBlocks);
-    if (input.item) {
-      await this.equip(input.item, "hand");
-    }
-    const placed = [];
-    for (const position of positions) {
-      const block = this.getRequiredBlock(position.x, position.y, position.z);
-      await this.requireMethod("placeBlock").call(this.requireBot(), block, faceVector(input.face));
-      placed.push(serializePosition(position));
-    }
-    return { placed: placed.length, face: input.face, item: input.item, positions: placed };
-  }
-
   async placeEntity(x: number, y: number, z: number, face: string, itemName?: string) {
     if (itemName) {
       await this.equip(itemName, "hand");
@@ -996,67 +820,6 @@ export class BotController {
     return { flying: true };
   }
 
-  async digLine(input: { from: { x: number; y: number; z: number }; to: { x: number; y: number; z: number }; maxBlocks: number }) {
-    const positions = axisAlignedLine(new Vec3(input.from.x, input.from.y, input.from.z), new Vec3(input.to.x, input.to.y, input.to.z));
-    this.requireMaxBlocks(positions.length, input.maxBlocks);
-    const dug = [];
-    for (const position of positions) {
-      const block = this.getRequiredBlock(position.x, position.y, position.z);
-      await this.requireMethod("dig").call(this.requireBot(), block, true);
-      dug.push(serializeBlock(block));
-    }
-    return { dug: dug.length, blocks: dug };
-  }
-
-  async digCuboid(input: { from: { x: number; y: number; z: number }; to: { x: number; y: number; z: number }; shell: boolean; maxBlocks: number }) {
-    const positions = cuboidPositions(new Vec3(input.from.x, input.from.y, input.from.z), new Vec3(input.to.x, input.to.y, input.to.z), input.shell);
-    this.requireMaxBlocks(positions.length, input.maxBlocks);
-    const dug = [];
-    for (const position of positions) {
-      const block = this.getRequiredBlock(position.x, position.y, position.z);
-      await this.requireMethod("dig").call(this.requireBot(), block, true);
-      dug.push(serializeBlock(block));
-    }
-    return { dug: dug.length, shell: input.shell, blocks: dug };
-  }
-
-  inspectCrop(x: number, y: number, z: number) {
-    const block = this.getRequiredBlock(x, y, z);
-    return { crop: this.cropState(block) };
-  }
-
-  async plantCrop(x: number, y: number, z: number, itemName: string) {
-    await this.equip(itemName, "hand");
-    const block = this.getRequiredBlock(x, y, z);
-    await this.requireMethod("placeBlock").call(this.requireBot(), block, faceVector("up"));
-    return { planted: true, item: itemName, referenceBlock: serializeBlock(block) };
-  }
-
-  async harvestCrop(x: number, y: number, z: number, onlyMature: boolean, replantItem?: string) {
-    const block = this.getRequiredBlock(x, y, z);
-    const crop = this.cropState(block);
-    if (onlyMature && crop.mature !== true) {
-      return { harvested: false, reason: "crop is not mature", crop };
-    }
-    await this.requireMethod("dig").call(this.requireBot(), block, true);
-    if (replantItem) {
-      await this.plantCrop(x, y - 1, z, replantItem);
-    }
-    return { harvested: true, crop, replantItem };
-  }
-
-  findMatureCrops(name: string, radius: number, count: number) {
-    const blockType = this.blockType(name);
-    const positions = this.requireMethod("findBlocks").call(this.requireBot(), { matching: blockType, maxDistance: radius, count: count * 4 }) as Vec3[];
-    const crops = positions
-      .map((position) => this.requireMethod("blockAt").call(this.requireBot(), position) as MineflayerBlock | null)
-      .filter((block): block is MineflayerBlock => Boolean(block))
-      .map((block) => this.cropState(block))
-      .filter((crop) => crop.mature === true)
-      .slice(0, count);
-    return { crops };
-  }
-
   async openWindowAt(x: number, y: number, z: number) {
     const block = this.getRequiredBlock(x, y, z);
     const window = await this.requireMethod("openContainer").call(this.requireBot(), block);
@@ -1067,145 +830,6 @@ export class BotController {
     const entity = this.getRequiredEntity(id);
     const window = await this.requireMethod("openContainer").call(this.requireBot(), entity);
     return { opened: true, entity: serializeEntity(entity, this.requireBot().entity?.position), window: serializeWindow(window) };
-  }
-
-  async openChestAt(x: number, y: number, z: number) {
-    const block = this.getRequiredBlock(x, y, z);
-    const window = await this.requireMethod("openChest").call(this.requireBot(), block);
-    return { opened: true, block: serializeBlock(block), chest: serializeWindow(window) };
-  }
-
-  async openEntityChest(id: number) {
-    const entity = this.getRequiredEntity(id);
-    const window = await this.requireMethod("openChest").call(this.requireBot(), entity);
-    return { opened: true, entity: serializeEntity(entity, this.requireBot().entity?.position), chest: serializeWindow(window) };
-  }
-
-  chestStatus() {
-    return { chest: serializeWindow(this.requireBot().currentWindow) };
-  }
-
-  async openFurnaceAt(x: number, y: number, z: number) {
-    const block = this.getRequiredBlock(x, y, z);
-    const furnace = await this.requireMethod("openFurnace").call(this.requireBot(), block);
-    return { opened: true, block: serializeBlock(block), furnace: serializeFurnace(furnace) };
-  }
-
-  furnaceStatus() {
-    return { furnace: serializeFurnace(this.requireFurnace()) };
-  }
-
-  async furnacePutInput(itemName: string, count: number) {
-    const furnace = this.requireFurnace();
-    if (!furnace.putInput) {
-      throw new Error("Current furnace does not support putInput.");
-    }
-    await furnace.putInput(this.itemType(itemName), null, count);
-    return { putInput: itemName, count, furnace: serializeFurnace(furnace) };
-  }
-
-  async furnacePutFuel(itemName: string, count: number) {
-    const furnace = this.requireFurnace();
-    if (!furnace.putFuel) {
-      throw new Error("Current furnace does not support putFuel.");
-    }
-    await furnace.putFuel(this.itemType(itemName), null, count);
-    return { putFuel: itemName, count, furnace: serializeFurnace(furnace) };
-  }
-
-  async furnaceTake(slot: "input" | "fuel" | "output") {
-    const furnace = this.requireFurnace();
-    const method = slot === "input" ? furnace.takeInput : slot === "fuel" ? furnace.takeFuel : furnace.takeOutput;
-    if (!method) {
-      throw new Error(`Current furnace does not support take ${slot}.`);
-    }
-    const item = await method.call(furnace);
-    return { took: slot, item: serializeItem(item), furnace: serializeFurnace(furnace) };
-  }
-
-  async anvilRename(x: number, y: number, z: number, itemName: string, name: string) {
-    const anvil = await this.openRequiredAnvil(x, y, z);
-    const item = this.findInventoryItem(itemName);
-    if (!anvil.rename) {
-      throw new Error("Anvil does not support rename.");
-    }
-    await anvil.rename(item, name);
-    return { renamed: item.name, name };
-  }
-
-  async anvilCombine(x: number, y: number, z: number, firstItem: string, secondItem: string, name?: string) {
-    const anvil = await this.openRequiredAnvil(x, y, z);
-    const first = this.findInventoryItem(firstItem);
-    const second = this.findInventoryItem(secondItem, first.slot);
-    if (!anvil.combine) {
-      throw new Error("Anvil does not support combine.");
-    }
-    await anvil.combine(first, second, name);
-    return { combined: [first.name, second.name], name };
-  }
-
-  async openEnchantmentAt(x: number, y: number, z: number) {
-    const block = this.getRequiredBlock(x, y, z);
-    const table = await this.requireMethod("openEnchantmentTable").call(this.requireBot(), block);
-    return { opened: true, block: serializeBlock(block), enchantmentTable: serializeEnchantmentTable(table) };
-  }
-
-  enchantmentStatus() {
-    return { enchantmentTable: serializeEnchantmentTable(this.requireEnchantmentTable()) };
-  }
-
-  async enchantmentPutTarget(itemName: string) {
-    const table = this.requireEnchantmentTable();
-    const item = this.findInventoryItem(itemName);
-    if (!table.putTargetItem) {
-      throw new Error("Current enchantment table does not support putTargetItem.");
-    }
-    const returned = await table.putTargetItem(item);
-    return { putTarget: serializeItem(returned), enchantmentTable: serializeEnchantmentTable(table) };
-  }
-
-  async enchantmentPutLapis(itemName: string) {
-    const table = this.requireEnchantmentTable();
-    const item = this.findInventoryItem(itemName);
-    if (!table.putLapis) {
-      throw new Error("Current enchantment table does not support putLapis.");
-    }
-    const returned = await table.putLapis(item);
-    return { putLapis: serializeItem(returned), enchantmentTable: serializeEnchantmentTable(table) };
-  }
-
-  async enchant(choice: string | number) {
-    const table = this.requireEnchantmentTable();
-    if (!table.enchant) {
-      throw new Error("Current enchantment table does not support enchant.");
-    }
-    const item = await table.enchant(choice);
-    return { enchanted: serializeItem(item), enchantmentTable: serializeEnchantmentTable(table) };
-  }
-
-  async enchantmentTakeTarget() {
-    const table = this.requireEnchantmentTable();
-    if (!table.takeTargetItem) {
-      throw new Error("Current enchantment table does not support takeTargetItem.");
-    }
-    const item = await table.takeTargetItem();
-    return { tookTarget: serializeItem(item), enchantmentTable: serializeEnchantmentTable(table) };
-  }
-
-  async openVillagerWindow(id: number) {
-    const entity = this.getRequiredEntity(id);
-    const villager = await this.requireMethod("openVillager").call(this.requireBot(), entity);
-    return { opened: true, entity: serializeEntity(entity, this.requireBot().entity?.position), villager: serializeVillager(villager) };
-  }
-
-  villagerStatus() {
-    return { villager: serializeVillager(this.requireVillager()) };
-  }
-
-  async villagerTrade(index: number, times: number) {
-    const villager = this.requireVillager();
-    await this.requireMethod("trade").call(this.requireBot(), villager, index, times);
-    return { traded: true, index, times, villager: serializeVillager(villager) };
   }
 
   windowStatus() {
@@ -1228,6 +852,12 @@ export class BotController {
     }
     await window.withdraw(this.itemType(itemName), null, count);
     return { withdrew: itemName, count, window: serializeWindow(window) };
+  }
+
+  async windowClick(slot: number, mouseButton: number, mode: number) {
+    const window = this.requireWindow();
+    await this.requireMethod("clickWindow").call(this.requireBot(), slot, mouseButton, mode);
+    return { clicked: true, slot, mouseButton, mode, window: serializeWindow(this.requireBot().currentWindow ?? window) };
   }
 
   closeWindow() {
@@ -1257,22 +887,6 @@ export class BotController {
     this.assertAttackAllowed(entity, options);
     this.requireMethod("attack").call(this.requireBot(), entity);
     return { attacked: true, entity: serializeEntity(entity, this.requireBot().entity?.position) };
-  }
-
-  attackNearest(input: { name?: string; type?: string; radius: number; allowPlayers?: boolean; allowPassive?: boolean }) {
-    const candidates = this.findEntities({
-      name: input.name,
-      type: input.type,
-      radius: input.radius,
-      limit: 1,
-      includePlayers: input.allowPlayers,
-      includePassive: input.allowPassive,
-    }).entities;
-    const target = candidates[0];
-    if (!target?.id) {
-      throw new Error("No attack target matched the filter.");
-    }
-    return this.attackEntity(target.id, { allowPlayers: input.allowPlayers, allowPassive: input.allowPassive });
   }
 
   swingArm(hand: "left" | "right", showHand: boolean) {
@@ -1373,41 +987,6 @@ export class BotController {
     return window;
   }
 
-  private requireFurnace(): MineflayerFurnace {
-    const window = this.requireWindow() as MineflayerFurnace;
-    if (!window.putInput && !window.takeOutput && window.fuel === undefined && window.progress === undefined) {
-      throw new Error("Current window is not a furnace.");
-    }
-    return window;
-  }
-
-  private async openRequiredAnvil(x: number, y: number, z: number): Promise<MineflayerAnvil> {
-    const block = this.getRequiredBlock(x, y, z);
-    return this.requireMethod("openAnvil").call(this.requireBot(), block);
-  }
-
-  private requireEnchantmentTable(): MineflayerEnchantmentTable {
-    const window = this.requireWindow() as MineflayerEnchantmentTable;
-    if (!window.enchantments && !window.enchant && !window.putTargetItem) {
-      throw new Error("Current window is not an enchantment table.");
-    }
-    return window;
-  }
-
-  private requireVillager(): MineflayerVillager {
-    const window = this.requireWindow() as MineflayerVillager;
-    if (!Array.isArray(window.trades)) {
-      throw new Error("Current window is not a villager trade window.");
-    }
-    return window;
-  }
-
-  private requireMaxBlocks(count: number, maxBlocks: number): void {
-    if (count > maxBlocks) {
-      throw new Error(`Command would affect ${count} blocks, above maxBlocks ${maxBlocks}.`);
-    }
-  }
-
   private selectRecipe(recipes: unknown[], recipeIndex?: number, recipeId?: string): { index: number; id?: string } {
     if (recipeIndex !== undefined && recipeId !== undefined) {
       throw new Error("Choose either recipeIndex or recipeId, not both.");
@@ -1436,20 +1015,6 @@ export class BotController {
       return recipeStringField(result, "id") ?? recipeStringField(result, "name");
     }
     return undefined;
-  }
-
-  private cropState(block: MineflayerBlock) {
-    const properties = block.getProperties?.() ?? {};
-    const rawAge = properties.age;
-    const age = typeof rawAge === "number" ? rawAge : typeof rawAge === "string" ? Number(rawAge) : undefined;
-    const normalizedAge = Number.isFinite(age) ? age : undefined;
-    const maxAge = matureAges[block.name];
-    return {
-      block: serializeBlock(block),
-      age: normalizedAge,
-      maxAge,
-      mature: maxAge === undefined || normalizedAge === undefined ? undefined : normalizedAge >= maxAge,
-    };
   }
 
   private isPlayerEntity(entity: MineflayerEntity): boolean {

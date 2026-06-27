@@ -40,26 +40,9 @@ class FakeBot extends EventEmitter {
     id: 1,
     type: "minecraft:chest",
     title: { toString: () => "Chest" },
-    fuel: 10,
-    progress: 5,
     containerItems: () => [{ name: "dirt", displayName: "Dirt", count: 4, slot: 0 }],
     deposit: vi.fn(),
     withdraw: vi.fn(),
-    inputItem: vi.fn(() => ({ name: "dirt", displayName: "Dirt", count: 1, slot: 0 })),
-    fuelItem: vi.fn(() => ({ name: "coal", displayName: "Coal", count: 1, slot: 1 })),
-    outputItem: vi.fn(() => ({ name: "stick", displayName: "Stick", count: 1, slot: 2 })),
-    putInput: vi.fn(),
-    putFuel: vi.fn(),
-    takeInput: vi.fn(async () => ({ name: "dirt", displayName: "Dirt", count: 1, slot: 0 })),
-    takeFuel: vi.fn(async () => ({ name: "coal", displayName: "Coal", count: 1, slot: 1 })),
-    takeOutput: vi.fn(async () => ({ name: "stick", displayName: "Stick", count: 1, slot: 2 })),
-    enchantments: [{ level: 1, expected: { enchant: 1, level: 1 } }],
-    targetItem: vi.fn(() => ({ name: "iron_sword", displayName: "Iron Sword", count: 1, slot: 36 })),
-    putTargetItem: vi.fn(async (item) => item),
-    putLapis: vi.fn(async (item) => item),
-    enchant: vi.fn(async () => ({ name: "iron_sword", displayName: "Iron Sword", count: 1, slot: 36 })),
-    takeTargetItem: vi.fn(async () => ({ name: "iron_sword", displayName: "Iron Sword", count: 1, slot: 36 })),
-    trades: [{ inputItem1: { name: "dirt", count: 1, slot: 0 }, outputItem: { name: "stick", count: 1, slot: 1 }, tradeDisabled: false }],
     close: vi.fn(),
   };
   chat = vi.fn();
@@ -90,12 +73,6 @@ class FakeBot extends EventEmitter {
   deactivateItem = vi.fn();
   recipesFor = vi.fn(() => [{ id: "recipe" }]);
   craft = vi.fn();
-  openChest = vi.fn(async () => this.currentWindow);
-  openFurnace = vi.fn(async () => this.currentWindow);
-  openAnvil = vi.fn(async () => ({ rename: vi.fn(), combine: vi.fn() }));
-  openEnchantmentTable = vi.fn(async () => this.currentWindow);
-  openVillager = vi.fn(async () => this.currentWindow);
-  trade = vi.fn();
   dig = vi.fn();
   stopDigging = vi.fn();
   placeBlock = vi.fn();
@@ -113,6 +90,7 @@ class FakeBot extends EventEmitter {
   dismount = vi.fn();
   moveVehicle = vi.fn();
   openContainer = vi.fn(async () => this.currentWindow);
+  clickWindow = vi.fn();
   pathfinder = {
     searchRadius: -1,
     thinkTimeout: 5000,
@@ -295,61 +273,27 @@ describe("BotController", () => {
     await expect(subject.place(1, 2, 3, "east", "dirt")).resolves.toMatchObject({ placed: true, face: "east" });
     expect(bot.placeBlock).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }), expect.objectContaining({ x: 1, y: 0, z: 0 }));
     await expect(subject.placeEntity(1, 2, 3, "up", "dirt")).resolves.toMatchObject({ placed: true, entity: { id: 12 } });
-    await expect(
-      subject.placeLine({ from: { x: 1, y: 2, z: 3 }, to: { x: 3, y: 2, z: 3 }, face: "up", item: "dirt", maxBlocks: 10 }),
-    ).resolves.toMatchObject({ placed: 3 });
-    await expect(
-      subject.placeCuboidShell({ from: { x: 1, y: 2, z: 3 }, to: { x: 2, y: 3, z: 4 }, face: "up", item: "dirt", maxBlocks: 20 }),
-    ).resolves.toMatchObject({ placed: 8 });
-
     await expect(subject.activate(1, 2, 3)).resolves.toMatchObject({ activated: true, block: { name: "dirt" } });
     expect(bot.activateBlock).toHaveBeenCalledWith(expect.objectContaining({ name: "dirt" }));
     expect(subject.updateSign(1, 2, 3, "hello", false)).toMatchObject({ updated: true });
     await expect(subject.sleep(1, 2, 3)).resolves.toMatchObject({ sleeping: true });
     await expect(subject.wake()).resolves.toEqual({ awake: true });
     await expect(subject.elytraFly()).resolves.toEqual({ flying: true });
-    await expect(subject.digLine({ from: { x: 1, y: 2, z: 3 }, to: { x: 1, y: 4, z: 3 }, maxBlocks: 10 })).resolves.toMatchObject({ dug: 3 });
-    await expect(subject.digCuboid({ from: { x: 1, y: 2, z: 3 }, to: { x: 2, y: 3, z: 4 }, shell: false, maxBlocks: 20 })).resolves.toMatchObject({
-      dug: 8,
-      shell: false,
-    });
-    expect(subject.inspectCrop(20, 64, 20)).toMatchObject({ crop: { age: 7, mature: true } });
-    expect(subject.findMatureCrops("wheat", 32, 5)).toMatchObject({ crops: [expect.objectContaining({ mature: true })] });
-    await expect(subject.plantCrop(1, 2, 3, "dirt")).resolves.toMatchObject({ planted: true });
-    await expect(subject.harvestCrop(20, 64, 20, true, "dirt")).resolves.toMatchObject({ harvested: true, replantItem: "dirt" });
 
     await expect(subject.openWindowAt(1, 2, 3)).resolves.toMatchObject({ opened: true, window: { id: 1, items: [{ name: "dirt" }] } });
     await expect(subject.openEntityWindow(10)).resolves.toMatchObject({ opened: true, entity: { id: 10 }, window: { id: 1 } });
     expect(subject.windowStatus()).toMatchObject({ window: { id: 1, type: "minecraft:chest" } });
     await expect(subject.windowDeposit("dirt", 1)).resolves.toMatchObject({ deposited: "dirt", count: 1 });
     await expect(subject.windowWithdraw("dirt", 1)).resolves.toMatchObject({ withdrew: "dirt", count: 1 });
+    await expect(subject.windowClick(5, 0, 0)).resolves.toMatchObject({ clicked: true, slot: 5, window: { id: 1 } });
+    expect(bot.clickWindow).toHaveBeenCalledWith(5, 0, 0);
     expect(subject.closeWindow()).toEqual({ closed: true });
-    await expect(subject.openChestAt(1, 2, 3)).resolves.toMatchObject({ opened: true, chest: { id: 1 } });
-    await expect(subject.openEntityChest(10)).resolves.toMatchObject({ opened: true, chest: { id: 1 } });
-    expect(subject.chestStatus()).toMatchObject({ chest: { id: 1 } });
-    await expect(subject.openFurnaceAt(1, 2, 3)).resolves.toMatchObject({ opened: true, furnace: { fuel: 10, inputItem: { name: "dirt" } } });
-    expect(subject.furnaceStatus()).toMatchObject({ furnace: { progress: 5, outputItem: { name: "stick" } } });
-    await expect(subject.furnacePutInput("dirt", 1)).resolves.toMatchObject({ putInput: "dirt" });
-    await expect(subject.furnacePutFuel("coal", 1)).resolves.toMatchObject({ putFuel: "coal" });
-    await expect(subject.furnaceTake("output")).resolves.toMatchObject({ took: "output", item: { name: "stick" } });
-    await expect(subject.anvilRename(1, 2, 3, "dirt", "Named Dirt")).resolves.toMatchObject({ renamed: "dirt", name: "Named Dirt" });
-    await expect(subject.anvilCombine(1, 2, 3, "dirt", "coal")).resolves.toMatchObject({ combined: ["dirt", "coal"] });
-    await expect(subject.openEnchantmentAt(1, 2, 3)).resolves.toMatchObject({ opened: true, enchantmentTable: { targetItem: { name: "iron_sword" } } });
-    expect(subject.enchantmentStatus()).toMatchObject({ enchantmentTable: { enchantments: [expect.objectContaining({ level: 1 })] } });
-    await expect(subject.enchantmentPutTarget("iron_sword")).resolves.toMatchObject({ putTarget: { name: "iron_sword" } });
-    await expect(subject.enchantmentPutLapis("lapis_lazuli")).resolves.toMatchObject({ putLapis: { name: "lapis_lazuli" } });
-    await expect(subject.enchant(0)).resolves.toMatchObject({ enchanted: { name: "iron_sword" } });
-    await expect(subject.enchantmentTakeTarget()).resolves.toMatchObject({ tookTarget: { name: "iron_sword" } });
-    await expect(subject.openVillagerWindow(10)).resolves.toMatchObject({ opened: true, villager: { trades: [expect.objectContaining({ index: 0 })] } });
-    expect((subject.villagerStatus().villager?.trades as Array<{ outputItem?: { name?: string } }>)[0].outputItem?.name).toBe("stick");
-    await expect(subject.villagerTrade(0, 1)).resolves.toMatchObject({ traded: true, index: 0, times: 1 });
 
     await expect(subject.activateEntity(10)).resolves.toMatchObject({ activated: true, entity: { id: 10 } });
     expect(subject.useOnEntity(10)).toMatchObject({ usedOn: true, entity: { id: 10 } });
     expect(subject.findEntities({ name: "cow", radius: 16, limit: 5, includePassive: true })).toMatchObject({ entities: [expect.objectContaining({ id: 10 })] });
     expect(() => subject.attackEntity(10)).toThrow("Refusing to attack a passive mob");
     expect(subject.attackEntity(10, { allowPassive: true })).toMatchObject({ attacked: true, entity: { id: 10 } });
-    expect(subject.attackNearest({ name: "cow", radius: 16, allowPassive: true })).toMatchObject({ attacked: true, entity: { id: 10 } });
     expect(subject.swingArm("right", true)).toEqual({ swung: true, hand: "right", showHand: true });
     expect(subject.mountEntity(10)).toMatchObject({ mounted: true, entity: { id: 10 } });
     expect(subject.dismount()).toEqual({ dismounted: true });

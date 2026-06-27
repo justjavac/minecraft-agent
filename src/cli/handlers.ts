@@ -191,63 +191,10 @@ export interface WindowItemInput extends SessionInput {
   count: number;
 }
 
-export interface BlockRangeInput extends SessionInput {
-  fromX: number;
-  fromY: number;
-  fromZ: number;
-  toX: number;
-  toY: number;
-  toZ: number;
-  maxBlocks: number;
-}
-
-export interface BuildPlaceRangeInput extends BlockRangeInput {
-  face: string;
-  item?: string;
-}
-
-export interface MineCuboidInput extends BlockRangeInput {
-  shell: boolean;
-}
-
-export interface CropInspectInput extends BlockPositionInput {}
-
-export interface CropPlantInput extends BlockPositionInput {
-  item: string;
-}
-
-export interface CropHarvestInput extends BlockPositionInput {
-  onlyMature: boolean;
-  replantItem?: string;
-}
-
-export interface CropFindMatureInput extends SessionInput {
-  name: string;
-  radius: number;
-  count: number;
-}
-
-export interface AnvilRenameInput extends BlockPositionInput {
-  item: string;
-  name: string;
-}
-
-export interface AnvilCombineInput extends BlockPositionInput {
-  firstItem: string;
-  secondItem: string;
-  name?: string;
-}
-
-export interface EnchantChoiceInput extends SessionInput {
-  choice: string | number;
-}
-
-export interface CombatAttackNearestInput extends SessionInput {
-  name?: string;
-  type?: string;
-  radius: number;
-  allowPlayers?: boolean;
-  allowPassive?: boolean;
+export interface WindowClickInput extends SessionInput {
+  slot: number;
+  mouseButton: number;
+  mode: number;
 }
 
 export interface DaemonRunInput extends StartSessionInput {
@@ -307,44 +254,13 @@ export interface CliHandlers {
   worldSleep(input: BlockPositionInput): Promise<unknown>;
   worldWake(input: SessionInput): Promise<unknown>;
   worldElytraFly(input: SessionInput): Promise<unknown>;
-  buildPlaceLine(input: BuildPlaceRangeInput): Promise<unknown>;
-  buildPlaceCuboidShell(input: BuildPlaceRangeInput): Promise<unknown>;
-  mineDigLine(input: BlockRangeInput): Promise<unknown>;
-  mineDigCuboid(input: MineCuboidInput): Promise<unknown>;
-  cropInspect(input: CropInspectInput): Promise<unknown>;
-  cropPlant(input: CropPlantInput): Promise<unknown>;
-  cropHarvest(input: CropHarvestInput): Promise<unknown>;
-  cropFindMature(input: CropFindMatureInput): Promise<unknown>;
   windowOpenBlock(input: BlockPositionInput): Promise<unknown>;
   windowOpenEntity(input: EntityInput): Promise<unknown>;
   windowStatus(input: SessionInput): Promise<unknown>;
   windowDeposit(input: WindowItemInput): Promise<unknown>;
   windowWithdraw(input: WindowItemInput): Promise<unknown>;
+  windowClick(input: WindowClickInput): Promise<unknown>;
   windowClose(input: SessionInput): Promise<unknown>;
-  chestOpenBlock(input: BlockPositionInput): Promise<unknown>;
-  chestOpenEntity(input: EntityInput): Promise<unknown>;
-  chestStatus(input: SessionInput): Promise<unknown>;
-  chestDeposit(input: WindowItemInput): Promise<unknown>;
-  chestWithdraw(input: WindowItemInput): Promise<unknown>;
-  chestClose(input: SessionInput): Promise<unknown>;
-  furnaceOpen(input: BlockPositionInput): Promise<unknown>;
-  furnaceStatus(input: SessionInput): Promise<unknown>;
-  furnacePutInput(input: WindowItemInput): Promise<unknown>;
-  furnacePutFuel(input: WindowItemInput): Promise<unknown>;
-  furnaceTakeInput(input: SessionInput): Promise<unknown>;
-  furnaceTakeFuel(input: SessionInput): Promise<unknown>;
-  furnaceTakeOutput(input: SessionInput): Promise<unknown>;
-  anvilRename(input: AnvilRenameInput): Promise<unknown>;
-  anvilCombine(input: AnvilCombineInput): Promise<unknown>;
-  enchantOpen(input: BlockPositionInput): Promise<unknown>;
-  enchantStatus(input: SessionInput): Promise<unknown>;
-  enchantPutTarget(input: SessionInput & { item: string }): Promise<unknown>;
-  enchantPutLapis(input: SessionInput & { item: string }): Promise<unknown>;
-  enchant(input: EnchantChoiceInput): Promise<unknown>;
-  enchantTakeTarget(input: SessionInput): Promise<unknown>;
-  villagerOpen(input: EntityInput): Promise<unknown>;
-  villagerStatus(input: SessionInput): Promise<unknown>;
-  villagerTrade(input: SessionInput & { index: number; times: number }): Promise<unknown>;
   entityFind(input: EntityFindInput): Promise<unknown>;
   entityActivate(input: EntityInput): Promise<unknown>;
   entityUseOn(input: EntityInput): Promise<unknown>;
@@ -353,7 +269,5 @@ export interface CliHandlers {
   entityMount(input: EntityInput): Promise<unknown>;
   entityDismount(input: SessionInput): Promise<unknown>;
   entityMoveVehicle(input: MoveVehicleInput): Promise<unknown>;
-  combatTargets(input: EntityFindInput): Promise<unknown>;
-  combatAttackNearest(input: CombatAttackNearestInput): Promise<unknown>;
   daemonRun(input: DaemonRunInput): Promise<unknown>;
 }

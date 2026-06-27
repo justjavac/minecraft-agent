@@ -107,24 +107,7 @@ describe("CLI protocol", () => {
   it("exposes all planned top-level command groups", () => {
     const { program } = makeProgram();
     const names = program.commands.map((command) => command.name());
-    expect(names).toEqual(
-      expect.arrayContaining([
-        "session",
-        "observe",
-        "chat",
-        "bot",
-        "control",
-        "look",
-        "navigate",
-        "collect",
-        "inventory",
-        "world",
-        "window",
-        "entity",
-        "skills",
-        "daemon",
-      ]),
-    );
+    expect(names).toEqual(["session", "observe", "chat", "bot", "control", "look", "navigate", "collect", "inventory", "world", "window", "entity", "skills", "daemon"]);
   });
 
   it("prints bundled skill content directly", async () => {
@@ -195,6 +178,7 @@ describe("CLI protocol", () => {
     vi.spyOn(handlers, "worldDig").mockResolvedValue({});
     vi.spyOn(handlers, "worldPlace").mockResolvedValue({});
     vi.spyOn(handlers, "worldActivate").mockResolvedValue({});
+    vi.spyOn(handlers, "windowClick").mockResolvedValue({});
     vi.spyOn(handlers, "daemonRun").mockResolvedValue({});
 
     await program.parseAsync(["node", "mc-agent", "session", "status", "--session", "s"]);
@@ -236,6 +220,7 @@ describe("CLI protocol", () => {
       "dirt",
     ]);
     await program.parseAsync(["node", "mc-agent", "world", "activate", "--session", "s", "--x", "16", "--y", "17", "--z", "18"]);
+    await program.parseAsync(["node", "mc-agent", "window", "click", "--session", "s", "--slot", "5", "--mouse-button", "1", "--mode", "0"]);
     await program.parseAsync(["node", "mc-agent", "daemon", "run", "--control-port", "4567"]);
 
     expect(handlers.sessionStatus).toHaveBeenCalledWith({ session: "s" });
@@ -260,6 +245,7 @@ describe("CLI protocol", () => {
     expect(handlers.worldDig).toHaveBeenCalledWith({ session: "s", x: 10, y: 11, z: 12 });
     expect(handlers.worldPlace).toHaveBeenCalledWith({ session: "s", x: 13, y: 14, z: 15, face: "east", item: "dirt" });
     expect(handlers.worldActivate).toHaveBeenCalledWith({ session: "s", x: 16, y: 17, z: 18 });
+    expect(handlers.windowClick).toHaveBeenCalledWith({ session: "s", slot: 5, mouseButton: 1, mode: 0 });
     expect(handlers.daemonRun).toHaveBeenCalledWith({
       session: "default",
       host: "localhost",

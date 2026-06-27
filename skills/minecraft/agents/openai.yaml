@@ -1,4 +1,4 @@
 interface:
   display_name: "Minecraft"
   short_description: "Control a Minecraft bot with mc-agent."
-  default_prompt: "Use $minecraft to install or verify mc-agent, connect or reuse a Minecraft bot, wait for authorized chat mentions, and react with bounded safe replies, movement, building, farming, inventory, or entity actions."
+  default_prompt: "Use $minecraft to install or verify mc-agent, connect or reuse a Minecraft bot, wait for authorized chat mentions, and react with bounded safe replies, movement, inventory, entity, block, or window actions."

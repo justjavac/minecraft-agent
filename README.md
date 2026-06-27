@@ -2,7 +2,7 @@
 
 [![coverage](https://img.shields.io/codecov/c/github/justjavac/minecraft-agent/main?label=coverage)](https://codecov.io/gh/justjavac/minecraft-agent)
 
-`minecraft` is an AI-agent skill for controlling a Minecraft bot through the `mc-agent` CLI. It helps agents such as Codex, Claude Code, and Gemini CLI connect to a Minecraft server, observe chat and world events, react when the bot is mentioned, and safely perform in-game tasks such as following players, farming, building, mining, crafting, and using containers.
+`minecraft` is an AI-agent skill for controlling a Minecraft bot through the `mc-agent` CLI. It helps agents such as Codex, Claude Code, and Gemini CLI connect to a Minecraft server, observe chat and world events, react when the bot is mentioned, and perform in-game tasks by composing basic movement, inventory, entity, block, and window primitives.
 
 Naming:
 
@@ -54,10 +54,6 @@ $minecraft start a local offline session on localhost:25565 with username AgentB
 
 ```text
 $minecraft wait for chat messages. If a player says "@AgentBot follow me", follow that player at range 2
-```
-
-```text
-$minecraft inspect my inventory, find mature wheat nearby, harvest it, and replant seeds when available
 ```
 
 ```text
@@ -138,7 +134,7 @@ $minecraft find player Steve, inspect bot position, then follow Steve at range 2
 Farming:
 
 ```text
-$minecraft inspect nearby farmland, find mature wheat, harvest it, replant seeds, and report what changed
+$minecraft inspect nearby farmland and inventory, then harvest and replant wheat one block at a time
 ```
 
 Building:
@@ -150,7 +146,7 @@ $minecraft check inventory for oak_planks, then build a 3 high by 5 wide wall in
 Mining:
 
 ```text
-$minecraft inspect the target blocks first, then mine a bounded 3x3 tunnel section and stop if the tool or path is unsafe
+$minecraft inspect each target block first, then mine the requested tunnel one block at a time and stop if the tool or path is unsafe
 ```
 
 Inventory and containers:
@@ -164,8 +160,9 @@ $minecraft open the chest I am looking at, deposit dirt, close the window, and c
 The skill deliberately pushes agents toward small, verified actions:
 
 - Inspect before moving, digging, placing, crafting, trading, or attacking.
-- Use explicit bounds such as radius, limit, range, and max block count.
+- Use explicit bounds such as radius, limit, and range.
 - Prefer one physical action followed by observation over long unverified command chains.
+- Compose farming, building, mining, smelting, trading, and other complex workflows from the basic CLI primitives.
 - Parse JSON errors and follow the returned remediation.
 - Stop and report the blocker when inventory, visibility, coordinates, or session state are uncertain.
 

@@ -135,37 +135,14 @@ mc-agent --output json world update-sign --session default --x 10 --y 64 --z -3 
 mc-agent --output json world sleep --session default --x 10 --y 64 --z -3
 mc-agent --output json world wake --session default
 mc-agent --output json world elytra-fly --session default
-mc-agent --output json build place-line --session default --from-x 10 --from-y 63 --from-z -3 --to-x 14 --to-y 63 --to-z -3 --face up --item dirt
-mc-agent --output json build place-cuboid-shell --session default --from-x 10 --from-y 63 --from-z -3 --to-x 14 --to-y 66 --to-z 1 --face up --item dirt --max-blocks 128
-mc-agent --output json mine dig-line --session default --from-x 10 --from-y 64 --from-z -3 --to-x 10 --to-y 68 --to-z -3
-mc-agent --output json mine dig-cuboid --session default --from-x 10 --from-y 64 --from-z -3 --to-x 12 --to-y 66 --to-z -1 --max-blocks 64
-mc-agent --output json crop inspect --session default --x 10 --y 64 --z -3
-mc-agent --output json crop find-mature --session default --name wheat --radius 32 --count 20
-mc-agent --output json crop plant --session default --x 10 --y 63 --z -3 --item wheat_seeds
-mc-agent --output json crop harvest --session default --x 10 --y 64 --z -3 --replant-item wheat_seeds
 mc-agent --output json window open-block --session default --x 10 --y 64 --z -3
 mc-agent --output json window open-entity --session default --id 12
 mc-agent --output json window status --session default
 mc-agent --output json window deposit --session default --item dirt --count 64
 mc-agent --output json window withdraw --session default --item dirt --count 64
+mc-agent --output json window click --session default --slot 0 --mouse-button 0 --mode 0
 mc-agent --output json window close --session default
-mc-agent --output json chest open-block --session default --x 10 --y 64 --z -3
-mc-agent --output json chest status --session default
-mc-agent --output json furnace open --session default --x 10 --y 64 --z -3
-mc-agent --output json furnace status --session default
-mc-agent --output json furnace put-input --session default --item raw_iron --count 1
-mc-agent --output json furnace put-fuel --session default --item coal --count 1
-mc-agent --output json furnace take-output --session default
-mc-agent --output json anvil rename --session default --x 10 --y 64 --z -3 --item iron_sword --name "Sharp"
-mc-agent --output json anvil combine --session default --x 10 --y 64 --z -3 --first-item iron_sword --second-item enchanted_book
-mc-agent --output json enchant open --session default --x 10 --y 64 --z -3
-mc-agent --output json enchant status --session default
-mc-agent --output json villager open --session default --id 12
-mc-agent --output json villager status --session default
-mc-agent --output json villager trade --session default --index 0 --times 1
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
-mc-agent --output json combat targets --session default --type mob --radius 16 --limit 20
-mc-agent --output json combat attack-nearest --session default --name zombie --radius 16
 mc-agent --output json entity attack --session default --id 12 --allow-passive
 mc-agent --output json entity activate --session default --id 12
 mc-agent --output json entity use-on --session default --id 12
@@ -204,32 +181,33 @@ Building:
 mc-agent --output json bot inventory --session default
 mc-agent --output json navigate goto --session default --x <nearX> --y <nearY> --z <nearZ> --range 2
 mc-agent --output json world place --session default --x <supportX> --y <supportY> --z <supportZ> --face up --item dirt
-mc-agent --output json build place-line --session default --from-x <x1> --from-y <y1> --from-z <z1> --to-x <x2> --to-y <y2> --to-z <z2> --face up --item dirt --max-blocks 64
 mc-agent --output json world block --session default --x <placedX> --y <placedY> --z <placedZ>
 ```
 
 Farming:
 
 ```bash
-mc-agent --output json crop find-mature --session default --name wheat --radius 32 --count 50
-mc-agent --output json crop harvest --session default --x <cropX> --y <cropY> --z <cropZ> --replant-item wheat_seeds
-mc-agent --output json crop plant --session default --x <farmlandX> --y <farmlandY> --z <farmlandZ> --item wheat_seeds
+mc-agent --output json world find-blocks --session default --name wheat --radius 32 --count 50
+mc-agent --output json world block-info --session default --x <cropX> --y <cropY> --z <cropZ>
+mc-agent --output json world dig --session default --x <cropX> --y <cropY> --z <cropZ>
+mc-agent --output json world place --session default --x <farmlandX> --y <farmlandY> --z <farmlandZ> --face up --item wheat_seeds
 ```
 
-Specialized containers:
+Containers:
 
 ```bash
-mc-agent --output json furnace open --session default --x <furnaceX> --y <furnaceY> --z <furnaceZ>
-mc-agent --output json furnace put-input --session default --item raw_iron --count 1
-mc-agent --output json furnace put-fuel --session default --item coal --count 1
-mc-agent --output json villager open --session default --id <villagerId>
-mc-agent --output json villager trade --session default --index 0 --times 1
+mc-agent --output json window open-block --session default --x <containerX> --y <containerY> --z <containerZ>
+mc-agent --output json window status --session default
+mc-agent --output json window deposit --session default --item dirt --count 64
+mc-agent --output json window withdraw --session default --item wheat_seeds --count 16
+mc-agent --output json window click --session default --slot <slot> --mouse-button 0 --mode 0
+mc-agent --output json window close --session default
 ```
 
 Combat:
 
 ```bash
-mc-agent --output json combat targets --session default --type mob --radius 16 --limit 20
+mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
 mc-agent --output json entity attack --session default --id <entityId> --allow-passive
 ```
 

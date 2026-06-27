@@ -131,18 +131,19 @@ mc-agent --output json world place --session default --x <supportX> --y <support
 mc-agent --output json world block --session default --x <placedX> --y <placedY> --z <placedZ>
 ```
 
-Use `build place-line` or `build place-cuboid-shell` only after checking inventory and setting a bounded `--max-blocks`. Verify representative blocks after the operation.
+For larger shapes, repeat `world place` one block at a time against loaded support blocks. Re-check representative blocks as you go.
 
 ## Farm Crops
 
 ```bash
 mc-agent --output json bot inventory --session default
-mc-agent --output json crop find-mature --session default --name wheat --radius 32 --count 50
-mc-agent --output json crop harvest --session default --x <cropX> --y <cropY> --z <cropZ> --replant-item wheat_seeds
-mc-agent --output json crop plant --session default --x <farmlandX> --y <farmlandY> --z <farmlandZ> --item wheat_seeds
+mc-agent --output json world find-blocks --session default --name wheat --radius 32 --count 50
+mc-agent --output json world block-info --session default --x <cropX> --y <cropY> --z <cropZ>
+mc-agent --output json world dig --session default --x <cropX> --y <cropY> --z <cropZ>
+mc-agent --output json world place --session default --x <farmlandX> --y <farmlandY> --z <farmlandZ> --face up --item wheat_seeds
 ```
 
-Do not force-harvest immature or unknown crops unless the user explicitly asks.
+Use `world block-info` to inspect crop properties. Do not harvest immature or unknown crops unless the user explicitly asks.
 
 ## Move Items Through A Container
 
@@ -151,6 +152,7 @@ mc-agent --output json world block-info --session default --x <x> --y <y> --z <z
 mc-agent --output json window open-block --session default --x <x> --y <y> --z <z>
 mc-agent --output json window status --session default
 mc-agent --output json window deposit --session default --item dirt --count 64
+mc-agent --output json window click --session default --slot <slot> --mouse-button 0 --mode 0
 mc-agent --output json window close --session default
 ```
 

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Minecraft",
+      "description": "Skills for controlling and automating Minecraft bot sessions.",
+      "skills": [
+        "minecraft"
+      ]
+    }
+  ]
+}

@@ -34,7 +34,7 @@ Event ids are stable and monotonic inside a running session. Track the largest \
 
 Use this checklist before any world-changing action:
 
-- Confirm \`session status\` is connected.
+- Confirm \`session status\` is connected and spawned.
 - Inspect \`bot position\` before coordinate-sensitive movement.
 - Inspect \`bot inventory\` before using, placing, crafting, planting, smelting, trading, or transferring items.
 - Inspect target players, entities, blocks, or windows before acting on ids or coordinates.
@@ -198,7 +198,7 @@ mc-agent --output json window withdraw --session default --item dirt --count 64
 mc-agent --output json window click --session default --slot 0 --mouse-button 0 --mode 0
 mc-agent --output json window close --session default
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
-mc-agent --output json entity attack --session default --id 12 --allow-passive
+mc-agent --output json entity attack --session default --id 12
 mc-agent --output json entity activate --session default --id 12
 mc-agent --output json entity use-on --session default --id 12
 mc-agent --output json entity swing-arm --session default --hand right
@@ -297,11 +297,11 @@ For structures, repeat \`world place\` one block at a time against loaded suppor
 mc-agent --output json bot entities --session default --radius 16 --limit 20
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
 mc-agent --output json look at --session default --x <entityX> --y <entityY> --z <entityZ>
-mc-agent --output json entity attack --session default --id <entityId> --allow-passive
+mc-agent --output json entity attack --session default --id <entityId>
 mc-agent --output json entity activate --session default --id <entityId>
 \`\`\`
 
-Use entity ids from \`bot entities\` or \`entity find\`. Do not attack players or passive mobs unless the user explicitly asked for it; the CLI requires \`--allow-players\` or \`--allow-passive\` for those targets.
+Use entity ids from \`bot entities\` or \`entity find\`. Do not attack players or passive mobs unless the user explicitly asked for it; add \`--allow-players\` or \`--allow-passive\` only for the explicitly authorized target class.
 
 ### Farm simple crops
 
@@ -426,6 +426,8 @@ Chat:
 
 \`\`\`bash
 mc-agent --output json chat send --session default --message "hello"
+mc-agent --output json chat whisper --session default --username Steve --message "hello"
+mc-agent --output json chat tab-complete --session default --text "/gi" --assume-command
 mc-agent --output json chat send --session default --message "/say hello" --allow-command
 \`\`\`
 
@@ -483,7 +485,7 @@ mc-agent --output json window withdraw --session default --item dirt --count 64
 mc-agent --output json window click --session default --slot 0 --mouse-button 0 --mode 0
 mc-agent --output json window close --session default
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
-mc-agent --output json entity attack --session default --id 12 --allow-passive
+mc-agent --output json entity attack --session default --id 12
 mc-agent --output json entity activate --session default --id 12
 mc-agent --output json entity use-on --session default --id 12
 mc-agent --output json entity swing-arm --session default --hand right

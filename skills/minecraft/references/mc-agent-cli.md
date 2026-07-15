@@ -81,6 +81,8 @@ Send chat:
 
 ```bash
 mc-agent --output json chat send --session default --message "hello"
+mc-agent --output json chat whisper --session default --username Steve --message "hello"
+mc-agent --output json chat tab-complete --session default --text "/gi" --assume-command
 ```
 
 Server commands are blocked by default:
@@ -143,7 +145,7 @@ mc-agent --output json window withdraw --session default --item dirt --count 64
 mc-agent --output json window click --session default --slot 0 --mouse-button 0 --mode 0
 mc-agent --output json window close --session default
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
-mc-agent --output json entity attack --session default --id 12 --allow-passive
+mc-agent --output json entity attack --session default --id 12
 mc-agent --output json entity activate --session default --id 12
 mc-agent --output json entity use-on --session default --id 12
 mc-agent --output json entity swing-arm --session default --hand right
@@ -208,10 +210,10 @@ Combat:
 
 ```bash
 mc-agent --output json entity find --session default --type mob --radius 16 --limit 20
-mc-agent --output json entity attack --session default --id <entityId> --allow-passive
+mc-agent --output json entity attack --session default --id <entityId>
 ```
 
-Attacking players or passive mobs requires explicit allow flags.
+Attacking players or passive mobs requires explicit allow flags. Add them only when the user authorized that target class.
 
 ## Common failures
 

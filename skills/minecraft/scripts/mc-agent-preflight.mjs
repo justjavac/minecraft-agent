@@ -2,6 +2,7 @@
 import { spawnSync } from "node:child_process";
 
 const options = parseArgs(process.argv.slice(2));
+const sessionNamePattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
 if (options.help) {
   print({
@@ -10,6 +11,10 @@ if (options.help) {
     description: "Check whether mc-agent is available and whether the target session is ready before taking Minecraft actions.",
   });
   process.exit(0);
+}
+
+if (!sessionNamePattern.test(options.session)) {
+  fail("Session names must be 1-64 characters and contain only letters, numbers, dot, underscore, or hyphen.");
 }
 
 const status = run(options.bin, ["--output", "json", "session", "status", "--session", options.session]);
@@ -31,20 +36,24 @@ const parsed = parseJson(status.stdout);
 
 if (status.exitCode === 0 && parsed?.ok === true) {
   const data = parsed.data ?? {};
-  const connected = data.connected === true;
+  const sessionStatus = data.status && typeof data.status === "object" ? data.status : data;
+  const connected = sessionStatus.connected === true;
+  const spawned = typeof sessionStatus.spawned === "boolean" ? sessionStatus.spawned : undefined;
+  const ready = connected && spawned === true;
   print({
-    ok: connected,
+    ok: ready,
     available: true,
     session: options.session,
     connected,
-    lastEventId: data.lastEventId,
-    username: data.username,
-    next: connected
-      ? `Read events with '${options.bin} --output json observe events --session ${options.session} --since ${data.lastEventId ?? 0} --limit 50'.`
+    spawned,
+    lastEventId: sessionStatus.lastEventId,
+    username: sessionStatus.username ?? data.username,
+    next: ready
+      ? `Read events with '${options.bin} --output json observe events --session ${options.session} --since ${sessionStatus.lastEventId ?? 0} --limit 50'.`
       : `Start or inspect the session before acting: '${options.bin} --output json session start --session ${options.session}'.`,
-    status: data,
+    status: sessionStatus,
   });
-  process.exit(connected ? 0 : 1);
+  process.exit(ready ? 0 : 1);
 }
 
 const error = parsed?.error;
@@ -88,7 +97,11 @@ function requireValue(args, index, flag) {
 }
 
 function run(command, args) {
-  const result = spawnSync(command, args, { encoding: "utf8" });
+  if (process.platform === "win32" && /[\r\n"&|<>^%!]/.test(command)) {
+    fail("The --bin path contains characters that are unsafe for the Windows command shell.");
+  }
+  const executable = process.platform === "win32" ? `"${command}"` : command;
+  const result = spawnSync(executable, args, { encoding: "utf8", shell: process.platform === "win32" });
   return {
     exitCode: result.status ?? 1,
     stdout: result.stdout ?? "",

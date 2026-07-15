@@ -243,8 +243,9 @@ function commandRunner<T>(
   formatter: TextFormatter = formatDefaultText,
 ) {
   return async () => {
-    const mode = getOutputMode(command, io);
+    let mode: ReturnType<typeof getOutputMode> | undefined;
     try {
+      mode = getOutputMode(command, io);
       const data = await action();
       if (mode === "json") {
         writeJson(io.stdout, success(data));
@@ -253,7 +254,27 @@ function commandRunner<T>(
       }
     } catch (error) {
       const normalized = normalizeError(error);
-      if (mode === "json") {
+      const errorMode = mode ?? (command.optsWithGlobals().output === "json" ? "json" : "text");
+      if (errorMode === "json") {
+        writeJson(io.stdout, failure(normalized));
+      } else {
+        writeText(io.stderr, `${normalized.code}: ${normalized.message}\n${normalized.remediation}`);
+      }
+      throw normalized;
+    }
+  };
+}
+
+function streamingCommandRunner(command: Command, io: CliIo, action: () => Promise<void>) {
+  return async () => {
+    let mode: ReturnType<typeof getOutputMode> | undefined;
+    try {
+      mode = getOutputMode(command, io);
+      await action();
+    } catch (error) {
+      const normalized = normalizeError(error);
+      const errorMode = mode ?? (command.optsWithGlobals().output === "json" ? "json" : "text");
+      if (errorMode === "json") {
         writeJson(io.stdout, failure(normalized));
       } else {
         writeText(io.stderr, `${normalized.code}: ${normalized.message}\n${normalized.remediation}`);
@@ -327,10 +348,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .option("--session <name>", "session name", "default")
     .option("--since <eventId>", "return events after this id", "0")
     .option("--type <eventType>", "include only this event type; repeat or comma-separate for multiple types", collectEventType, [])
-    .action(async (opts, cmd) => {
-      resolveOutputMode(cmd.optsWithGlobals().output, io.isStdoutTty);
-      await handlers.observeWatch(watchSchema.parse(opts));
-    });
+    .action((opts, cmd) => streamingCommandRunner(cmd, io, () => handlers.observeWatch(watchSchema.parse(opts)))());
 
   const chat = program.command("chat").description("Send Minecraft chat");
 
@@ -614,7 +632,7 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
     .command("craft")
     .description("Craft an item using a selected available recipe")
     .requiredOption("--item <name>", "item name")
-    .option("--count <count>", "craft count", "1")
+    .option("--count <count>", "minimum result count", "1")
     .option("--table-x <number>", "crafting table x coordinate")
     .option("--table-y <number>", "crafting table y coordinate")
     .option("--table-z <number>", "crafting table z coordinate")
@@ -868,14 +886,16 @@ export function buildProgram(handlers: CliHandlers, io: CliIo, version = "0.0.0"
 
   const skills = program.command("skills").description("Print mc-agent skill content for AI agents");
 
-  skills
+  const getSkill = skills
     .command("get")
     .description("Print a bundled skill by name")
     .argument("<name>", "skill name, for example core")
     .option("--full", "include full command reference", false)
-    .action((name: string, opts: { full: boolean }) => {
-      writeText(io.stdout, getSkillContent(name, opts.full));
-    });
+    .action((name: string, opts: { full: boolean }) =>
+      streamingCommandRunner(getSkill, io, async () => {
+        writeText(io.stdout, getSkillContent(name, opts.full));
+      })(),
+    );
 
   const daemon = new Command("daemon").description("Internal daemon commands");
   daemon

@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import { buildProgram } from "../src/cli/program.js";
 import type { CliHandlers } from "../src/cli/handlers.js";
+import { sessionNotFound } from "../src/output/errors.js";
 
 class MemoryStream extends Writable {
   value = "";
@@ -118,6 +119,36 @@ describe("CLI protocol", () => {
     expect(stdout.value).toContain("# mc-agent core");
     expect(stdout.value).toContain("The observe-decide-act loop");
     expect(stdout.value).toContain("Waiting and refreshing");
+  });
+
+  it("writes structured errors for streaming and raw-output commands", async () => {
+    const watch = makeProgram();
+    vi.spyOn(watch.handlers, "observeWatch").mockRejectedValue(sessionNotFound("missing"));
+
+    await expect(
+      watch.program.parseAsync(["node", "mc-agent", "--output", "json", "observe", "watch", "--session", "missing"]),
+    ).rejects.toMatchObject({ code: "SESSION_NOT_FOUND", exitCode: 4 });
+    expect(JSON.parse(watch.stdout.value)).toMatchObject({
+      ok: false,
+      error: { code: "SESSION_NOT_FOUND", remediation: expect.stringContaining("session start") },
+    });
+
+    const skill = makeProgram();
+    await expect(skill.program.parseAsync(["node", "mc-agent", "--output", "json", "skills", "get", "missing"])).rejects.toMatchObject({
+      code: "UNKNOWN_ERROR",
+    });
+    expect(JSON.parse(skill.stdout.value)).toMatchObject({ ok: false, error: { code: "UNKNOWN_ERROR" } });
+  });
+
+  it("writes invalid output mode errors instead of failing silently", async () => {
+    const { program, stderr } = makeProgram();
+
+    await expect(program.parseAsync(["node", "mc-agent", "--output", "yaml", "session", "status"])).rejects.toMatchObject({
+      code: "BAD_INPUT",
+      exitCode: 3,
+    });
+    expect(stderr.value).toContain("BAD_INPUT: Invalid output mode.");
+    expect(stderr.value).toContain("Use --output json or --output text.");
   });
 
   it("maps negated navigation configuration flags", async () => {

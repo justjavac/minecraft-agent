@@ -65,12 +65,12 @@ describe("CLI actions", () => {
   it("rejects already-running sessions and removes stale sessions before restart", async () => {
     const { handlers, mocks } = await loadActionsWithMocks();
     mocks.readSession.mockResolvedValueOnce({ session: "default" });
-    mocks.toPublicSession.mockReturnValueOnce({ alive: true });
+    mocks.daemonRequest.mockResolvedValueOnce({ connected: true });
 
     await expect(handlers.startSession(startInput())).rejects.toMatchObject({ code: "SESSION_ALREADY_RUNNING" });
 
     mocks.readSession.mockResolvedValueOnce({ session: "default" });
-    mocks.toPublicSession.mockReturnValueOnce({ alive: false });
+    mocks.daemonRequest.mockRejectedValueOnce(new Error("connection refused"));
     mocks.spawnSessionDaemon.mockResolvedValueOnce({ controlPort: 11111 });
 
     await handlers.startSession(startInput());

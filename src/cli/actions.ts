@@ -17,8 +17,14 @@ export function createCliHandlers(entryPoint = fileURLToPath(import.meta.url)): 
     async startSession(input) {
       const existing = await readSession(input.session);
       if (existing) {
-        const publicRecord = toPublicSession(existing);
-        if (publicRecord.alive) {
+        let daemonIsHealthy = false;
+        try {
+          await daemonRequest(existing, "/status", { signal: AbortSignal.timeout(1500) });
+          daemonIsHealthy = true;
+        } catch {
+          // A live PID is not sufficient: stale records can point at an unrelated reused PID.
+        }
+        if (daemonIsHealthy) {
           throw new CliError(
             "SESSION_ALREADY_RUNNING",
             `Session '${input.session}' is already running.`,

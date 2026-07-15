@@ -43,7 +43,12 @@ type MineflayerBot = EventEmitter & {
   heldItem?: { name: string; displayName?: string } | null;
   currentWindow?: MineflayerWindow | null;
   inventory?: { items(): MineflayerItem[] };
-  registry?: { blocksByName?: Record<string, { id: number }>; blocksArray?: unknown[]; itemsByName?: Record<string, { id: number }> };
+  registry?: {
+    blocksByName?: Record<string, { id: number }>;
+    blocksArray?: unknown[];
+    itemsByName?: Record<string, { id: number }>;
+    entitiesByName?: Record<string, { category?: string }>;
+  };
   world?: unknown;
   chat(message: string): void;
   whisper?(username: string, message: string): void;
@@ -156,7 +161,9 @@ const passiveEntityNames = new Set([
   "frog",
   "glow_squid",
   "goat",
+  "happy_ghast",
   "horse",
+  "iron_golem",
   "llama",
   "mooshroom",
   "mule",
@@ -167,6 +174,8 @@ const passiveEntityNames = new Set([
   "rabbit",
   "salmon",
   "sheep",
+  "sniffer",
+  "snow_golem",
   "squid",
   "strider",
   "tadpole",
@@ -286,6 +295,7 @@ function recipeStringField(recipe: unknown, field: string): string | undefined {
 export class BotController {
   private bot?: MineflayerBot;
   private connected = false;
+  private spawned = false;
   private lastError?: string;
   private readonly controlState: Record<string, boolean> = {};
   private readonly navigationMovementConfig: NavigationMovementConfig = {};
@@ -309,18 +319,22 @@ export class BotController {
 
     this.bot.on("login", () => {
       this.connected = true;
+      this.spawned = false;
       this.events.add({ type: "login", text: "Bot logged in." });
     });
     this.bot.on("spawn", () => {
       this.connected = true;
+      this.spawned = true;
       this.events.add({ type: "spawn", text: "Bot spawned." });
     });
     this.bot.on("end", (reason) => {
       this.connected = false;
+      this.spawned = false;
       this.events.add({ type: "end", text: String(reason ?? "Connection ended."), raw: reason });
     });
     this.bot.on("kicked", (reason) => {
       this.connected = false;
+      this.spawned = false;
       this.events.add({ type: "kicked", text: String(reason), raw: reason });
     });
     this.bot.on("error", (error) => {
@@ -328,6 +342,7 @@ export class BotController {
       this.events.add({ type: "error", text: this.lastError, raw: this.lastError });
     });
     this.bot.on("death", () => {
+      this.spawned = false;
       this.events.add({ type: "death", text: "Bot died." });
     });
     this.bot.on("health", () => {
@@ -403,6 +418,7 @@ export class BotController {
   status() {
     return {
       connected: this.connected,
+      spawned: this.spawned,
       username: this.bot?.username ?? this.options.username,
       host: this.options.host,
       port: this.options.port,
@@ -750,7 +766,15 @@ export class BotController {
     table?: { x: number; y: number; z: number },
     recipeIndex?: number,
     recipeId?: string,
-  ): Promise<{ crafted: string; count: number; recipeIndex: number; recipeId?: string }> {
+  ): Promise<{
+    crafted: string;
+    count: number;
+    requestedCount: number;
+    craftCount: number;
+    expectedResultCount: number;
+    recipeIndex: number;
+    recipeId?: string;
+  }> {
     const itemType = this.itemType(itemName);
     const craftingTable = table ? this.getRequiredBlock(table.x, table.y, table.z) : undefined;
     const recipes = this.requireMethod("recipesFor").call(this.requireBot(), itemType, null, count, craftingTable ?? null) as unknown[];
@@ -759,8 +783,19 @@ export class BotController {
     if (!recipe) {
       throw new Error(`No recipe found for '${itemName}'.`);
     }
-    await this.requireMethod("craft").call(this.requireBot(), recipe, count, craftingTable);
-    return { crafted: itemName, count, recipeIndex: selected.index, recipeId: selected.id };
+    const resultCount = this.recipeResultCount(recipe);
+    const craftCount = Math.ceil(count / resultCount);
+    const expectedResultCount = craftCount * resultCount;
+    await this.requireMethod("craft").call(this.requireBot(), recipe, craftCount, craftingTable);
+    return {
+      crafted: itemName,
+      count,
+      requestedCount: count,
+      craftCount,
+      expectedResultCount,
+      recipeIndex: selected.index,
+      recipeId: selected.id,
+    };
   }
 
   async dig(x: number, y: number, z: number): Promise<{ dug: true; block: ReturnType<typeof serializeBlock> }> {
@@ -1017,12 +1052,28 @@ export class BotController {
     return undefined;
   }
 
+  private recipeResultCount(recipe: unknown): number {
+    if (!recipe || typeof recipe !== "object") {
+      return 1;
+    }
+    const result = (recipe as Record<string, unknown>).result;
+    if (!result || typeof result !== "object") {
+      return 1;
+    }
+    const count = (result as Record<string, unknown>).count;
+    return typeof count === "number" && Number.isInteger(count) && count > 0 ? count : 1;
+  }
+
   private isPlayerEntity(entity: MineflayerEntity): boolean {
     return entity.type === "player" || Boolean(entity.username);
   }
 
   private isPassiveEntity(entity: MineflayerEntity): boolean {
-    return Boolean(entity.name && passiveEntityNames.has(entity.name));
+    if (!entity.name) {
+      return false;
+    }
+    const category = this.requireBot().registry?.entitiesByName?.[entity.name]?.category;
+    return category?.toLowerCase().includes("passive") === true || passiveEntityNames.has(entity.name);
   }
 
   private assertAttackAllowed(entity: MineflayerEntity, options: { allowPlayers?: boolean; allowPassive?: boolean }): void {

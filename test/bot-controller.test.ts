@@ -9,6 +9,7 @@ class FakeBot extends EventEmitter {
   entity = { position: { x: 1, y: 2, z: 3 } };
   entities = {
     "10": { id: 10, name: "cow", type: "mob", position: { x: 3, y: 2, z: 3 } },
+    "12": { id: 12, name: "sniffer", type: "mob", position: { x: 5, y: 2, z: 3 } },
   };
   players = {
     Steve: { username: "Steve", entity: { id: 11, username: "Steve", type: "player", position: { x: 4, y: 2, z: 3 } } },
@@ -35,6 +36,7 @@ class FakeBot extends EventEmitter {
   registry = {
     blocksByName: { dirt: { id: 3 }, wheat: { id: 59 } },
     itemsByName: { dirt: { id: 3 }, stick: { id: 280 }, coal: { id: 263 }, lapis_lazuli: { id: 351 }, iron_sword: { id: 267 } },
+    entitiesByName: { sniffer: { category: "Passive mobs" } },
   };
   currentWindow = {
     id: 1,
@@ -71,7 +73,7 @@ class FakeBot extends EventEmitter {
   fish = vi.fn();
   activateItem = vi.fn();
   deactivateItem = vi.fn();
-  recipesFor = vi.fn(() => [{ id: "recipe" }]);
+  recipesFor = vi.fn(() => [{ id: "recipe", result: { count: 4 } }]);
   craft = vi.fn();
   dig = vi.fn();
   stopDigging = vi.fn();
@@ -122,6 +124,7 @@ describe("BotController", () => {
   it("records lifecycle and message events", () => {
     const { subject, bot, events } = controller();
     bot.emit("spawn");
+    expect(subject.status()).toMatchObject({ connected: true, spawned: true });
     bot.emit("whisper", "Alex", "secret", undefined, { text: "secret" });
     bot.emit("message", { toString: () => "server says hi" }, "system", "Server");
     bot.emit("death");
@@ -133,7 +136,7 @@ describe("BotController", () => {
     bot.emit("error", new Error("bad"));
     bot.emit("end");
 
-    expect(subject.status()).toMatchObject({ connected: false, lastError: "bad", lastEventId: 11 });
+    expect(subject.status()).toMatchObject({ connected: false, spawned: false, lastError: "bad", lastEventId: 11 });
     expect(events.list(0, 20)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: "spawn" }),
@@ -197,7 +200,7 @@ describe("BotController", () => {
       players: [expect.objectContaining({ username: "Steve", entityId: 11, distance: 3 })],
     });
     expect(subject.entities(10, 5)).toMatchObject({
-      entities: [expect.objectContaining({ id: 10, name: "cow", distance: 2 })],
+      entities: expect.arrayContaining([expect.objectContaining({ id: 10, name: "cow", distance: 2 })]),
     });
     expect(subject.tablist()).toMatchObject({ tablist: { header: "Welcome" } });
     expect(subject.scoreboards()).toMatchObject({ scoreboards: { main: { name: "main" } } });
@@ -262,7 +265,17 @@ describe("BotController", () => {
     expect(subject.activateItem(false)).toEqual({ activated: true, offhand: false });
     expect(subject.deactivateItem()).toEqual({ deactivated: true });
     expect(subject.recipes("stick", 1)).toMatchObject({ item: "stick", recipes: [{ id: "recipe" }] });
-    await expect(subject.craft("stick", 1)).resolves.toMatchObject({ crafted: "stick", count: 1, recipeIndex: 0, recipeId: "recipe" });
+    await expect(subject.craft("stick", 1)).resolves.toMatchObject({
+      crafted: "stick",
+      count: 1,
+      requestedCount: 1,
+      craftCount: 1,
+      expectedResultCount: 4,
+      recipeIndex: 0,
+      recipeId: "recipe",
+    });
+    await expect(subject.craft("stick", 5)).resolves.toMatchObject({ craftCount: 2, expectedResultCount: 8 });
+    expect(bot.craft).toHaveBeenLastCalledWith(expect.objectContaining({ id: "recipe" }), 2, undefined);
     await expect(subject.craft("stick", 1, undefined, 0)).resolves.toMatchObject({ recipeIndex: 0 });
     await expect(subject.craft("stick", 1, undefined, undefined, "recipe")).resolves.toMatchObject({ recipeId: "recipe" });
 
@@ -294,6 +307,8 @@ describe("BotController", () => {
     expect(subject.findEntities({ name: "cow", radius: 16, limit: 5, includePassive: true })).toMatchObject({ entities: [expect.objectContaining({ id: 10 })] });
     expect(() => subject.attackEntity(10)).toThrow("Refusing to attack a passive mob");
     expect(subject.attackEntity(10, { allowPassive: true })).toMatchObject({ attacked: true, entity: { id: 10 } });
+    expect(subject.findEntities({ name: "sniffer", radius: 16, limit: 5 })).toEqual({ entities: [] });
+    expect(() => subject.attackEntity(12)).toThrow("Refusing to attack a passive mob");
     expect(subject.swingArm("right", true)).toEqual({ swung: true, hand: "right", showHand: true });
     expect(subject.mountEntity(10)).toMatchObject({ mounted: true, entity: { id: 10 } });
     expect(subject.dismount()).toEqual({ dismounted: true });
